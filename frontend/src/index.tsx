@@ -1,16 +1,23 @@
-/* @refresh reload */
-import { render } from 'solid-js/web';
-import 'solid-devtools';
+import { MountableElement, render } from "solid-js/web";
+import { A, Route, Router } from "@solidjs/router";
+import Home from "./pages/Home";
+import Module from "./pages/Module";
 
-import './index.css';
-import App from './App';
+const App = (props: any) => (
+  <>
+    <nav>
+      <A href="/">Домой</A> | <A href="/module">Модуль</A>
+    </nav>
+    {props.children}
+  </>
+);
 
-const root = document.getElementById('root');
-
-if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
-  throw new Error(
-    'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got misspelled?',
-  );
-}
-
-render(() => <App />, root!);
+render(
+  () => (
+    <Router root={App}>
+      <Route path="/" component={Home} />
+      <Route path="/module" component={Module} />
+    </Router>
+  ),
+  document.getElementById("root") as MountableElement,
+);
