@@ -1,10 +1,13 @@
-import { defineConfig } from "vite";
-import { nitroV2Plugin as nitro } from "@solidjs/vite-plugin-nitro-2";
-
-import { solidStart } from "@solidjs/start/config";
+import { defineConfig } from 'vite';
+import solidPlugin from 'vite-plugin-solid';
+import devtools from 'solid-devtools/vite';
 
 export default defineConfig({
-  plugins: [solidStart(),
-    nitro()
-  ]
+  plugins: [devtools(), solidPlugin()],
+  server: {
+    port: 3000,
+  },
+  build: {
+    target: 'esnext',
+  },
 });
