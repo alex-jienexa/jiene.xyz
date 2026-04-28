@@ -1,4 +1,4 @@
-FROM oven/bun:latest as builder
+FROM oven/bun:latest
 
 WORKDIR /app
 COPY frontend/ .
@@ -6,7 +6,8 @@ COPY frontend/ .
 RUN bun install
 RUN bun run build
 
-FROM caddy:latest
+EXPOSE 3000
 
-COPY Caddyfile /etc/caddy/Caddyfile
-COPY --from=builder /app/dist /srv
+# Todo: заменить потом из `vite preview` на полноценный build.
+# Это требует отдельного сервера (бекенда например).
+CMD ["bun", "run", "serve"]
