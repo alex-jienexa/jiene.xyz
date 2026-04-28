@@ -1,6 +1,3 @@
-localhost {
-    root * /srv
-    file_server
-
-    try_files {path} /index.html
+jiene.462292.xyz {
+    reverse_proxy app:3000
 }

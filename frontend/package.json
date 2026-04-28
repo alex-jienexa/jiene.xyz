@@ -1,11 +1,11 @@
 {
   "name": "frontend",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "bunx vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview --host 0.0.0.0 --port 3000"
   },
   "license": "MIT",
   "devDependencies": {
