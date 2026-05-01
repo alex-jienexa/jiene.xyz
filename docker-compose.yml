@@ -1,6 +1,10 @@
 version: "3.9"
 
 services:
+  # При разработке лучше этот сервис комментировать, так
+  # как он занимает важные порта 80 и 443.
+  # Доступ к приложениям можно и так получить через другие
+  # порты, например, 8080 для backend и 3000 для app.
   caddy:
     image: caddy:latest
     container_name: caddy
@@ -15,12 +19,34 @@ services:
     depends_on:
       - app
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        - BUILD_MODE=vendor # Измените на default, если не нужен режим vendor
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_ADDR=redis:6379
+
   app:
-    build: .
+    build: ./frontend
     container_name: app
     restart: unless-stopped
     expose:
       - "3000"
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
 
 volumes:
   caddy_data:

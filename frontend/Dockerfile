@@ -1,7 +1,7 @@
 FROM oven/bun:latest
 
 WORKDIR /app
-COPY frontend/ .
+COPY . .
 
 RUN bun install
 RUN bun run build
