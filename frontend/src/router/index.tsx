@@ -44,10 +44,6 @@ type RouteDefinition = {
   component: Component<any>;
 };
 
-type RouteProps = {
-  routes: RouteDefinition[];
-};
-
 type RoutesProps = {
   routes: RouteDefinition[];
 };
