@@ -5,7 +5,6 @@
 //   <Router>
 //     <Route path="/"          component={HomePage} />
 //     <Route path="/projects"  component={ProjectsPage} />
-//     <Route path="/404"       component={NotFoundPage} />
 //   </Router>
 //
 //   const { navigate, path } = useRouter()
@@ -18,49 +17,33 @@ import {
   useContext,
   onCleanup,
   onMount,
-  children,
-  For,
-  Show,
-  JSX,
   Accessor,
   Component,
-  ParentComponent,
-  createComponent,
+  ParentProps,
 } from "solid-js";
+import { Dynamic } from "solid-js/web";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type NavigateOptions = {
-  replace?: boolean;
-};
-
-type RouterContextType = {
-  path: Accessor<string>;
-  navigate: (to: string, options?: NavigateOptions) => void;
-};
-
-type RouteDefinition = {
+export interface RouteConfig {
   path: string;
-  component: Component<any>;
-};
+  component: Component<{ params?: Record<string, string> }>;
+}
 
-type RoutesProps = {
-  routes: RouteDefinition[];
-};
+export interface NavigateOptions {
+  replace?: boolean;
+}
 
-type LinkProps = JSX.AnchorHTMLAttributes<HTMLAnchorElement> & {
-  href: string;
-  activeClass?: string;
-  exact?: boolean;
-};
-
-type Params = Record<string, string | undefined>;
+export interface RouterContextValue {
+  path: Accessor<string>;
+  navigate: (to: string, opts?: NavigateOptions) => void;
+}
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
-const RouterContext = createContext<RouterContextType>();
+const RouterContext = createContext<RouterContextValue>();
 
-export function useRouter(): RouterContextType {
+export function useRouter(): RouterContextValue {
   const ctx = useContext(RouterContext);
 
   if (!ctx) {
@@ -71,7 +54,7 @@ export function useRouter(): RouterContextType {
 }
 // ─── Router ───────────────────────────────────────────────────────────────────
 
-export const Router: ParentComponent = (props) => {
+export function Router(props: ParentProps) {
   const [path, setPath] = createSignal(location.pathname);
 
   // Sync with browser history
@@ -92,25 +75,21 @@ export const Router: ParentComponent = (props) => {
   }
 
   // Intercept all <a> clicks on the page (opt-in with data-spa)
-  function handleAnchorClick(e: MouseEvent) {
-    const target = e.target as HTMLElement | null;
-    const a = target?.closest("a[data-spa]") as HTMLAnchorElement | null;
+  function handleClick(e: MouseEvent) {
+    const a = (e.target as Element).closest<HTMLAnchorElement>("a[data-spa]");
     if (!a) return;
     e.preventDefault();
-    const href = a.getAttribute("href");
-    if (href) navigate(href);
+    navigate(a.getAttribute("href") ?? "/");
   }
-  onMount(() => document.addEventListener("click", handleAnchorClick));
-  onCleanup(() => document.removeEventListener("click", handleAnchorClick));
-
-  const ctx: RouterContextType = { path, navigate };
+  onMount(() => document.addEventListener("click", handleClick));
+  onCleanup(() => document.removeEventListener("click", handleClick));
 
   return (
-    <RouterContext.Provider value={ctx}>
+    <RouterContext.Provider value={{ path, navigate }}>
       {props.children}
     </RouterContext.Provider>
   );
-};
+}
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
@@ -118,51 +97,50 @@ export const Router: ParentComponent = (props) => {
  * Routes выбирает первый <Route>, чей path совпадает с текущим.
  * Поддерживает точное совпадение и префикс (path="/module").
  */
-export const Routes: Component<RoutesProps> = (props) => {
+export function Routes(props: { routes: RouteConfig[]; fallback?: Component }) {
   const { path } = useRouter();
 
-  // Собираем route-записи из children
-  const routes = createMemo<RouteDefinition[]>(() => {
-    const ch = props.routes;
-    return (Array.isArray(ch) ? ch : [ch]).filter(Boolean) as RouteDefinition[];
-  });
-
-  const matched = createMemo<RouteDefinition | null>(() => {
+  const matched = createMemo(() => {
     const current = path();
 
     // Exact match first, then prefix
     return (
-      routes().find((r) => r.path === current) ??
-      routes().find(
+      props.routes.find((r) => r.path === current) ??
+      props.routes.find(
         (r) => r.path !== "/" && current.startsWith(r.path + "/"),
-      ) ??
-      routes().find((r) => r.path === "/404") ??
-      null
+      )
     );
   });
 
-  return (
-    <Show when={matched()} fallback={null}>
-      {(route) => {
-        const r = route();
-
-        return createComponent(r.component, {
-          params: extractParams(r.path, path()),
-        });
-      }}
-    </Show>
+  // createMemo на компонент — Dynamic перерисует его реактивно
+  const ActiveComponent = createMemo(
+    () => matched()?.component ?? props.fallback ?? NotFoundDefault,
   );
-};
+
+  const params = createMemo(() =>
+    matched() ? extractParams(matched()!.path, path()) : {},
+  );
+
+  return <Dynamic component={ActiveComponent()} params={params()} />;
+}
 
 // ─── Link ─────────────────────────────────────────────────────────────────────
 
-export const Link: Component<LinkProps> = (props) => {
+interface LinkProps {
+  href: string;
+  class?: string;
+  activeClass?: string;
+  exact?: boolean;
+  children?: any;
+}
+
+export function Link(props: LinkProps) {
   const { path } = useRouter();
-  const isActive = (): boolean => {
-    return props.exact
+  const isActive = createMemo(() =>
+    props.exact
       ? path() === props.href
-      : path() === props.href || path().startsWith(props.href + "/");
-  };
+      : path() === props.href || path().startsWith(props.href + "/"),
+  );
 
   return (
     <a
@@ -174,32 +152,31 @@ export const Link: Component<LinkProps> = (props) => {
           .join(" ") || undefined
       }
       aria-current={isActive() ? "page" : undefined}
-      {...omit(props, ["href", "class", "activeClass", "exact"])}
     >
       {props.children}
     </a>
   );
-};
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function extractParams(pattern: string, current: string): Params {
+function extractParams(
+  pattern: string,
+  current: string,
+): Record<string, string> {
   // Simple: strip the pattern prefix to get the "rest"
   if (!pattern.includes(":")) return {};
   const parts = pattern.split("/").slice(1);
   const cparts = current.split("/").slice(1);
   return Object.fromEntries(
-    parts
-      .map((p, i) => (p.startsWith(":") ? [p.slice(1), cparts[i]] : null))
-      .filter(Boolean) as [string, string | undefined][],
+    parts.flatMap((p, i) =>
+      p.startsWith(":") ? [[p.slice(1), cparts[i] ?? ""]] : [],
+    ),
   );
 }
 
-function omit<T extends Record<string, any>, K extends keyof T>(
-  obj: T,
-  keys: K[],
-): Omit<T, K> {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([k]) => !keys.includes(k as K)),
-  ) as Omit<T, K>;
+function NotFoundDefault() {
+  return (
+    <div style={{ padding: "2rem", "font-family": "Caveat, cursive" }}>404</div>
+  );
 }
