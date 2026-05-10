@@ -1,14 +1,6 @@
-// src/router/index.jsx
-// Лёгкий SPA-роутер на History API без внешних зависимостей.
-//
-// Использование:
-//   <Router>
-//     <Route path="/"          component={HomePage} />
-//     <Route path="/projects"  component={ProjectsPage} />
-//   </Router>
-//
-//   const { navigate, path } = useRouter()
-//   <Link href="/projects">Проекты</Link>
+// src/router/index.tsx
+// SPA-роутер на History API + SolidJS signals.
+// Ключевое: Dynamic из solid-js/web для реактивной замены компонентов.
 
 import {
   createContext,
@@ -17,13 +9,13 @@ import {
   useContext,
   onCleanup,
   onMount,
-  Accessor,
-  Component,
-  ParentProps,
+  type Component,
+  type ParentProps,
+  type Accessor,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface RouteConfig {
   path: string;
@@ -45,36 +37,28 @@ const RouterContext = createContext<RouterContextValue>();
 
 export function useRouter(): RouterContextValue {
   const ctx = useContext(RouterContext);
-
-  if (!ctx) {
-    throw new Error("useRouter must be used inside <Router>");
-  }
-
+  if (!ctx) throw new Error("useRouter() must be used inside <Router>");
   return ctx;
 }
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export function Router(props: ParentProps) {
   const [path, setPath] = createSignal(location.pathname);
 
-  // Sync with browser history
   const onPop = () => setPath(location.pathname);
   onMount(() => window.addEventListener("popstate", onPop));
   onCleanup(() => window.removeEventListener("popstate", onPop));
 
-  function navigate(
-    to: string,
-    { replace = false }: NavigateOptions = {},
-  ): void {
+  function navigate(to: string, { replace = false }: NavigateOptions = {}) {
     if (to === path()) return;
     replace
       ? history.replaceState(null, "", to)
       : history.pushState(null, "", to);
-    setPath(to);
+    setPath(to); // ← сигнал → весь граф реактивности обновляется
     window.scrollTo(0, 0);
   }
 
-  // Intercept all <a> clicks on the page (opt-in with data-spa)
   function handleClick(e: MouseEvent) {
     const a = (e.target as Element).closest<HTMLAnchorElement>("a[data-spa]");
     if (!a) return;
@@ -92,23 +76,17 @@ export function Router(props: ParentProps) {
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+// Dynamic — единственный правильный способ реактивно менять компонент в SolidJS.
+// Без него компонент рендерится один раз и не обновляется при смене пути.
 
-/**
- * Routes выбирает первый <Route>, чей path совпадает с текущим.
- * Поддерживает точное совпадение и префикс (path="/module").
- */
 export function Routes(props: { routes: RouteConfig[]; fallback?: Component }) {
   const { path } = useRouter();
 
   const matched = createMemo(() => {
-    const current = path();
-
-    // Exact match first, then prefix
+    const cur = path();
     return (
-      props.routes.find((r) => r.path === current) ??
-      props.routes.find(
-        (r) => r.path !== "/" && current.startsWith(r.path + "/"),
-      )
+      props.routes.find((r) => r.path === cur) ??
+      props.routes.find((r) => r.path !== "/" && cur.startsWith(r.path + "/"))
     );
   });
 
@@ -136,6 +114,7 @@ interface LinkProps {
 
 export function Link(props: LinkProps) {
   const { path } = useRouter();
+
   const isActive = createMemo(() =>
     props.exact
       ? path() === props.href
@@ -158,19 +137,18 @@ export function Link(props: LinkProps) {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function extractParams(
   pattern: string,
   current: string,
 ): Record<string, string> {
-  // Simple: strip the pattern prefix to get the "rest"
   if (!pattern.includes(":")) return {};
-  const parts = pattern.split("/").slice(1);
-  const cparts = current.split("/").slice(1);
+  const pp = pattern.split("/").slice(1);
+  const cp = current.split("/").slice(1);
   return Object.fromEntries(
-    parts.flatMap((p, i) =>
-      p.startsWith(":") ? [[p.slice(1), cparts[i] ?? ""]] : [],
+    pp.flatMap((p, i) =>
+      p.startsWith(":") ? [[p.slice(1), cp[i] ?? ""]] : [],
     ),
   );
 }
