@@ -127,7 +127,7 @@ export const Routes: Component<RoutesProps> = (props) => {
 
   // Собираем route-записи из children
   const routes = createMemo<RouteDefinition[]>(() => {
-    const ch = props.children as unknown;
+    const ch = props.routes;
     return (Array.isArray(ch) ? ch : [ch]).filter(Boolean) as RouteDefinition[];
   });
 
