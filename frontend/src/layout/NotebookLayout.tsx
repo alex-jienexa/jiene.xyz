@@ -3,19 +3,27 @@
 // Предоставляет компонент отображения макета блокнота для страницы.
 // Смотрите документацию {@link NotebookLayout} для получения информации.
 
-import { JSX } from "solid-js";
+import { JSX, ParentProps } from "solid-js";
 import styles from "./NotebookLayout.module.css";
 import { Spiral } from "./Spiral";
 
 /**
+ * Компонент для описания свойств компонента {@link NotebookLayout}.
+ * Наследует свойства от {@link ParentProps}, содержащие дочерние элементы `children`.
+ */
+interface NotebookLayoutProps extends ParentProps {
+  // Todo: добавление дополнительных компонентов для навигации
+}
+
+/**
  * Предоставляет схему макета блокнота для страницы.
  *
- * @param {JSX.Element} props.clildren - Дочерние элементы, которые будут отображаться внутри макета блокнота
+ * @param {NotebookLayoutProps} props - Свойства компонента, включая дочерние элементы `children`, см. {@link NotebookLayoutProps} для описания свойств
  * @returns {JSX.Element} Элемент макета блокнота
  *
  * @todo Там не закончено отображение модулей, это нужно доделать!
  */
-export function NotebookLayout(props: { children?: JSX.Element }): JSX.Element {
+export function NotebookLayout(props: NotebookLayoutProps): JSX.Element {
   return (
     <div class={styles.shell}>
       <div class={styles.cover}>
@@ -65,8 +73,6 @@ export function NotebookLayout(props: { children?: JSX.Element }): JSX.Element {
  * ```ts
  * formatDate() // -> "10 мая 2026"
  * ```
- *
- * @private
  */
 function formatDate() {
   return new Date().toLocaleDateString("ru-RU", {

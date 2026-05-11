@@ -1,4 +1,7 @@
 // src/pages/NotFoundPage.tsx
+// --------------------------
+// Предоставляет компонент
+
 import { Link } from "../router";
 import styles from "./NotFoundPage.module.css";
 
