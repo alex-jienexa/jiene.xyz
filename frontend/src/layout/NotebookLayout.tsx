@@ -6,13 +6,24 @@
 import { JSX, ParentProps } from "solid-js";
 import styles from "./NotebookLayout.module.css";
 import { Spiral } from "./Spiral";
+import { NAV_ITEMS } from "../data/config";
 
 /**
  * Компонент для описания свойств компонента {@link NotebookLayout}.
  * Наследует свойства от {@link ParentProps}, содержащие дочерние элементы `children`.
  */
 interface NotebookLayoutProps extends ParentProps {
-  // Todo: добавление дополнительных компонентов для навигации
+  /**
+   * Кодовый ID текущей подстраницы, выбранной в {@link NotebookLayout} и
+   * отображаемый при иинициализации компонента.
+   */
+  activePage: string;
+  /**
+   * Функция обратного вызова, вызываемая при навигации к другой подстранице.
+   * @param id Кодовый ID новой подстраницы
+   * @returns
+   */
+  onNavigate: (id: string) => void;
 }
 
 /**
@@ -39,27 +50,30 @@ export function NotebookLayout(props: NotebookLayoutProps): JSX.Element {
             <div class={`${styles.diaryTitle} font-hand`}>Мой Блокнотик</div>
             <div class={styles.divider} />
           </div>
-          {/* Внутренние вкладки блокнота - местный аналог навигации */}
 
-          {/* Вкладки модулей как отдельные страницы */}
+          {/* Внутренние вкладки блокнота - местный аналог навигации */}
+          <nav class={styles.nav}>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                class={`${styles.navBtn} font-hand ${props.activePage === item.id ? styles.navBtnActive : ""}`}
+                onClick={() => props.onNavigate(item.id)}
+              >
+                <span class={styles.navIcon}>{item.icon}</span>
+                <span>{item.label}</span>
+                {props.activePage === item.id && <span class={styles.navDot} />}
+              </button>
+            ))}
+          </nav>
+
+          {/* Вкладки модулей */}
         </div>
 
         <div class={styles.spine}>
           <Spiral count={14} vertical={true} />
         </div>
 
-        <div class={styles.contentPage}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
-          minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-          aliquip ex ea commodo consequat. Duis aute irure dolor in
-          reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-          pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-          culpa qui officia deserunt mollit anim id est laborum. Neque porro
-          quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur,
-          adipisci velit.
-          {props.children}
-        </div>
+        <div class={`${styles.contentPage} ruled-only`}>{props.children}</div>
       </div>
       <div class={styles.bottom}></div>
     </div>
@@ -67,7 +81,7 @@ export function NotebookLayout(props: NotebookLayoutProps): JSX.Element {
 }
 
 /**
- * Возвращает отформатированную дату в формате "день месяц год".
+ * Возвращает сегодняшнюю дату в формате "день месяц год".
  *
  * @example
  * ```ts
