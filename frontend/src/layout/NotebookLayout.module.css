@@ -1,6 +1,7 @@
 .shell {
     width: 100%;
     max-width: var(--max-width);
+    min-width: var(--min-width-vw);
     display: flex;
     flex-direction: column;
     filter: drop-shadow(var(--shadow-book));

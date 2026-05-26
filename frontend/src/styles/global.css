@@ -51,6 +51,7 @@
 
     /* Layout */
     --max-width: 1120px;
+    --min-width-vw: 80vw;
     --nav-width: 210px;
     --line-h: 2rem;
     --r-sm: 3px;
