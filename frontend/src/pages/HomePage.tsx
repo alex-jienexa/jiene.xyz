@@ -5,6 +5,7 @@
 import { createSignal, Switch, Match } from "solid-js";
 import { NotebookLayout } from "../layout/NotebookLayout";
 import { About } from "../features/about/About";
+import { Cover } from "../features/cover/Cover";
 
 /**
  * Компонент `HomePage` отображает главную страницу приложения, используя компонент `NotebookLayout`.
@@ -15,6 +16,9 @@ export default function HomePage() {
   return (
     <NotebookLayout activePage={tab()} onNavigate={setTab}>
       <Switch>
+        <Match when={tab() === "cover"}>
+          <Cover />
+        </Match>
         <Match when={tab() === "about"}>
           <About />
         </Match>

@@ -7,6 +7,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  { id: "cover", label: "Обложка", icon: "📓" },
   { id: "about", label: "О себе", icon: "👤" },
 ];
 
