@@ -67,6 +67,8 @@ export function NotebookLayout(props: NotebookLayoutProps): JSX.Element {
           </nav>
 
           {/* Вкладки модулей */}
+
+          <Pencil />
         </div>
 
         <div class={styles.spine}>
@@ -76,6 +78,18 @@ export function NotebookLayout(props: NotebookLayoutProps): JSX.Element {
         <div class={`${styles.contentPage} ruled-only`}>{props.children}</div>
       </div>
       <div class={styles.bottom}></div>
+    </div>
+  );
+}
+
+function Pencil() {
+  return (
+    <div class={styles.pencilWrap} aria-hidden="true">
+      <div class={styles.pencil}>
+        <div class={styles.pencilEraser} />
+        <div class={styles.pencilBody} />
+        <div class={styles.pencilTip} />
+      </div>
     </div>
   );
 }

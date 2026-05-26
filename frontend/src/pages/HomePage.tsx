@@ -12,7 +12,8 @@ import { Cover } from "../features/cover/Cover";
  * @returns Компонент домашней страницы
  */
 export default function HomePage() {
-  const [tab, setTab] = createSignal("about");
+  const [tab, setTab] = createSignal("cover");
+
   return (
     <NotebookLayout activePage={tab()} onNavigate={setTab}>
       <Switch>
