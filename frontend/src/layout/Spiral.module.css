@@ -1,0 +1,34 @@
+.spiral {
+    display: flex;
+    align-items: center;
+    z-index: 10;
+}
+.horizontal {
+    flex-direction: row;
+    width: 100%;
+    height: 30px;
+    justify-content: space-around;
+    padding: 0 14px;
+}
+.vertical {
+    flex-direction: column;
+    height: 100%;
+    width: 30px;
+    justify-content: space-around;
+    padding: 12px 0;
+}
+.ring {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid var(--leather-mid);
+    background: radial-gradient(
+        circle at 30% 30%,
+        var(--leather-sheen),
+        var(--leather-mid)
+    );
+    box-shadow:
+        inset 1px 1px 0 var(--leather-sheen),
+        0 1px 3px rgba(0, 0, 0, 0.3);
+}

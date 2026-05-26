@@ -1,0 +1,210 @@
+/* =============================================
+   DESIGN TOKENS — меняйте только переменные
+   ============================================= */
+:root {
+    /* Paper */
+    --paper-light: #faf6ee;
+    --paper: #f4eed9;
+    --paper-warm: #ede4c8;
+    --paper-dark: #ddd3b0;
+    --paper-crease: #c9bc97;
+
+    /* Leather (diary spine / cover) */
+    --leather: #6b4c35;
+    --leather-mid: #8b6248;
+    --leather-light: #b08060;
+    --leather-sheen: #d4a882;
+
+    /* Ink */
+    --ink: #2b2016;
+    --ink-mid: #5c4e38;
+    --ink-light: #8c7d65;
+    --ink-faint: #b8aa90;
+
+    /* Ruled lines */
+    --line-color: rgba(143, 170, 200, 0.3);
+    --margin-color: rgba(210, 120, 120, 0.36);
+
+    /* Pastel accents */
+    --sage: #7ba67b;
+    --sage-light: #b8d4b3;
+    --rose: #c77b84;
+    --rose-light: #e8b4ba;
+    --lavender: #8b79b8;
+    --lavender-light: #c9bfe8;
+    --amber: #c49a2e;
+    --amber-light: #e8d48c;
+    --sky: #5a8fb8;
+    --sky-light: #aecfe8;
+
+    /* Ribbon bookmark */
+    --ribbon: #c77b84;
+    --ribbon-dark: #a05868;
+
+    /* Shadows */
+    --shadow-page:
+        0 4px 24px rgba(50, 35, 15, 0.2), 0 1px 4px rgba(50, 35, 15, 0.12);
+    --shadow-lift:
+        0 8px 32px rgba(50, 35, 15, 0.25), 0 2px 8px rgba(50, 35, 15, 0.14);
+    --shadow-book:
+        0 20px 60px rgba(50, 35, 15, 0.32), 4px 0 12px rgba(50, 35, 15, 0.1);
+
+    /* Layout */
+    --max-width: 1120px;
+    --min-width-vw: 80vw;
+    --nav-width: 210px;
+    --line-h: 2rem;
+    --r-sm: 3px;
+    --r-md: 6px;
+    --r-lg: 12px;
+
+    /* Motion */
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: #a08060;
+    background-image:
+        radial-gradient(
+            ellipse at 15% 25%,
+            rgba(90, 60, 30, 0.4) 0%,
+            transparent 55%
+        ),
+        radial-gradient(
+            ellipse at 85% 75%,
+            rgba(70, 45, 20, 0.35) 0%,
+            transparent 50%
+        );
+    min-height: 100vh;
+    font-family: "Lora", Georgia, serif;
+    color: var(--ink);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+}
+
+/* Paper noise texture */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* Utility mixins */
+.ruled {
+    background-image:
+        linear-gradient(var(--margin-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--margin-color) 1px, transparent 1px),
+        linear-gradient(var(--line-color) 1px, transparent 1px);
+    background-size:
+        100% var(--line-h),
+        48px 100%,
+        100% var(--line-h);
+}
+.ruled-only {
+    background-image: linear-gradient(var(--line-color) 1px, transparent 1px);
+    background-size: 100% var(--line-h);
+}
+.dotted {
+    background-image: radial-gradient(
+        circle,
+        var(--ink-faint) 1px,
+        transparent 1px
+    );
+    background-size: 22px 22px;
+}
+
+/* Typography */
+.font-hand {
+    font-family: "Caveat", cursive;
+}
+.font-serif {
+    font-family: "Lora", serif;
+}
+.font-fell {
+    font-family: "IM Fell English", serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+}
+::-webkit-scrollbar-track {
+    background: var(--paper-warm);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--paper-crease);
+    border-radius: 3px;
+}
+
+/* Selection */
+::selection {
+    background: var(--amber-light);
+    color: var(--ink);
+}
+
+/* Animations */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+@keyframes stampIn {
+    from {
+        transform: scale(0.5) rotate(-12deg);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) rotate(-2deg);
+        opacity: 1;
+    }
+}
+@keyframes ribbonDrop {
+    from {
+        transform: scaleY(0);
+        transform-origin: top;
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
