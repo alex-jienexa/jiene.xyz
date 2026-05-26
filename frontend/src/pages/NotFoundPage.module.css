@@ -52,8 +52,8 @@
 /* Большой декоративный «404» на фоне */
 .code {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 58%;
+    left: 48%;
     transform: translate(-50%, -55%);
     font-size: clamp(7rem, 22vw, 13rem);
     font-weight: 700;
