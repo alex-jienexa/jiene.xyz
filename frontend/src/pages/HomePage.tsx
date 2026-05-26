@@ -4,7 +4,7 @@
 
 import { createSignal, Switch, Match } from "solid-js";
 import { NotebookLayout } from "../layout/NotebookLayout";
-import About from "../features/about/About";
+import { About } from "../features/about/About";
 
 /**
  * Компонент `HomePage` отображает главную страницу приложения, используя компонент `NotebookLayout`.
