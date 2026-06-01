@@ -17,7 +17,7 @@ func (s *Service) handlePixel(c *gin.Context) {
 		return
 	}
 
-	if err := s.SetPixel(p); err != nil {
+	if err := s.SetPixel(c, p); err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
 		})
@@ -30,7 +30,13 @@ func (s *Service) handlePixel(c *gin.Context) {
 }
 
 func (s *Service) handleBoard(c *gin.Context) {
-	board := s.GetBoard()
+	board, err := s.GetBoard()
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
 
 	c.JSON(200, gin.H{
 		"board": board,

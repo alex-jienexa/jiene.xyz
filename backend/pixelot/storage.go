@@ -9,28 +9,23 @@ import (
 
 type Storage struct {
 	rdb *redis.Client
-	ctx context.Context
 }
 
 func NewStorage(rdb *redis.Client) *Storage {
 	return &Storage{
 		rdb: rdb,
-		ctx: context.Background(),
 	}
 }
 
-func (s *Storage) setPixel(p Pixel) {
+func (s *Storage) setPixel(ctx context.Context, p Pixel) error {
 	key := fmt.Sprintf("%d:%d", p.X, p.Y)
-	s.rdb.Set(s.ctx, key, p.Color, 0)
+	return s.rdb.HSet(ctx, "board", key, p.Color).Err()
 }
 
-func (s *Storage) getBoard() map[string]string {
-	keys, _ := s.rdb.Keys(s.ctx, "*:*").Result()
-
-	board := make(map[string]string)
-	for _, key := range keys {
-		value, _ := s.rdb.Get(s.ctx, key).Result()
-		board[key] = value
+func (s *Storage) getBoard(ctx context.Context) (map[string]string, error) {
+	board, err := s.rdb.HGetAll(ctx, "board").Result()
+	if err != nil {
+		return nil, err
 	}
-	return board
+	return board, nil
 }

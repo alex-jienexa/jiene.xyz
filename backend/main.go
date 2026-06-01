@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -19,14 +20,16 @@ func main() {
 	if redisAddr == "" {
 		redisAddr = "localhost:6379"
 	}
-	redis := redis.NewClient(&redis.Options{
+	redisClient := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
 
 	pixelotGroup := api.Group("/pixel")
 	pixelot.Mount(pixelotGroup, pixelot.Config{
-		RedisClient: redis,
+		RedisClient: redisClient,
 	})
 
-	http.ListenAndServe(":8080", router)
+	if err := http.ListenAndServe(":8080", router); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }

@@ -1,5 +1,11 @@
 package pixelot
 
+import (
+	"context"
+
+	"github.com/gin-gonic/gin"
+)
+
 type Service struct {
 	storage *Storage
 }
@@ -10,13 +16,12 @@ func NewService(config Config) *Service {
 	}
 }
 
-func (s *Service) SetPixel(p Pixel) error {
+func (s *Service) SetPixel(c *gin.Context, p Pixel) error {
 	// Todo: проверка на ключи и доступ
 
-	s.storage.setPixel(p)
-	return nil
+	return s.storage.setPixel(c.Request.Context(), p)
 }
 
-func (s *Service) GetBoard() map[string]string {
-	return s.storage.getBoard()
+func (s *Service) GetBoard() (map[string]string, error) {
+	return s.storage.getBoard(context.Background())
 }

@@ -13,7 +13,7 @@ func Mount(rg *gin.RouterGroup, config Config) *Service {
 	rg.GET("/ping", service.handlePing)
 	rg.GET("/board", service.handleBoard)
 
-	rg.POST("/pixel", service.handlePixel)
+	rg.POST("/place", service.handlePixel)
 
 	return service
 }

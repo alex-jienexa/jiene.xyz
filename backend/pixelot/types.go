@@ -5,7 +5,7 @@ import "github.com/redis/go-redis/v9"
 type Pixel struct {
 	X     int    `json:"x"`
 	Y     int    `json:"y"`
-	Color string `json:"color"`
+	Color string `json:"color"` // В формате `#RRGGBB`
 }
 
 // Config сохраняет конфигурации модуля. Там же и определяются
