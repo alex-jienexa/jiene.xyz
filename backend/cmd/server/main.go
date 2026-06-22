@@ -4,10 +4,13 @@ import (
 	"log"
 	"net/http"
 
+	"alex-jienexa/jiene.xyz/backend/internal/handler"
+	"alex-jienexa/jiene.xyz/backend/internal/repository"
+	"alex-jienexa/jiene.xyz/backend/internal/service"
 	"alex-jienexa/jiene.xyz/backend/pkg/database"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 func main() {
@@ -24,11 +27,51 @@ func main() {
 	}
 	defer db.Close() // Определяем закрытие подключения к базе данных когда заканчивается работа main
 
-	// Это пример простейшего HTTP-сервера из документации Chi
+	// --- Регистрация репозиториев ---
+	profileRepo := repository.NewProfileRepository(db)
+
+	// --- Регистрация сервисов ---
+	profileService := service.NewProfileService(profileRepo)
+
+	// --- Регистрация хендлеров ---
+	profileHandler := handler.NewProfileHandler(profileService)
+
+	router := buildRouter(profileHandler)
+	addr := ":8080"
+
+	log.Printf("jiene.xyz backend listening on %s", addr)
+	if err := http.ListenAndServe(addr, router); err != nil {
+		log.Fatalf("server failed: %v", err)
+	}
+}
+
+// buildRouter собирает все маршруты бекенда приложения в одном месте.
+// Тут описываются все пути API, а также объявляется контракт CORS.
+// Если нужно добавить новый путь или новый хендлер, это делается
+// здесь.
+func buildRouter(
+	profileHandler *handler.ProfileHandler,
+) http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World!"))
-	})
-	http.ListenAndServe(":3000", r)
+
+	// Настройка CORS для взаимодействия между фронтендом и бекендом.
+	// В разработке используется cross-origin с 3000 портом - портом
+	// фронтенда, но когда идёт разворот на сервер и фронтенд
+	// собирается как файлы в директории `dist/`, то можно сузить
+	// список allowed origins до домена сайта.
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	r.Get("/whoami", profileHandler.Get)
+
+	// TODO[jiene]: сделать защищённую группу через JWT-верификацию
+	// для доступа к изменении информации о себе
+	r.Post("/whoami", profileHandler.Update)
+
+	return r
 }

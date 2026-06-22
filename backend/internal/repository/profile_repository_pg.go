@@ -1,4 +1,4 @@
-package pg
+package repository
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 	"errors"
 
 	"alex-jienexa/jiene.xyz/backend/internal/entity"
-	"alex-jienexa/jiene.xyz/backend/internal/repository"
 )
 
 type profilePostgresRepository struct {
 	db *sql.DB
 }
 
-func NewProfileRepository(db *sql.DB) repository.ProfileRepository {
+func NewProfileRepository(db *sql.DB) ProfileRepository {
 	return &profilePostgresRepository{db: db}
 }
 
