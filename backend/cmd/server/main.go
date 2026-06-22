@@ -7,9 +7,11 @@ import (
 	"alex-jienexa/jiene.xyz/backend/internal/handler"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
 	"alex-jienexa/jiene.xyz/backend/internal/service"
+	"alex-jienexa/jiene.xyz/backend/internal/static"
 	"alex-jienexa/jiene.xyz/backend/pkg/database"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
@@ -36,11 +38,22 @@ func main() {
 	// --- Регистрация хендлеров ---
 	profileHandler := handler.NewProfileHandler(profileService)
 
-	router := buildRouter(profileHandler)
-	addr := ":8080"
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
+	apiRouter := buildRouter(profileHandler)
+	r.Mount("/api/", apiRouter)
+
+	// --- Регистрируем статику ---
+	// Делаем это последним, так как если сделать иначе, то сервер
+	// будет ловить сначала пути из файловой системы (и вернёт 404),
+	// и только потом будет смотреть пути из API (нет, не будет).
+	static.Mount(r)
+
+	addr := ":8080"
 	log.Printf("jiene.xyz backend listening on %s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
+	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("server failed: %v", err)
 	}
 }
