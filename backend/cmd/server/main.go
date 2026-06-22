@@ -16,11 +16,12 @@ import (
 )
 
 func main() {
+	// TODO[jiene]: Сделать поддержку локальных переменных
 	db, err := database.Connect(database.Config{
-		Host:     "localhost",
+		Host:     "db",
 		Port:     "5432",
-		User:     "grimoire",
-		Password: "",
+		User:     "postgres",
+		Password: "postgres",
 		DBName:   "grimoire",
 		SSLMode:  "disable",
 	})

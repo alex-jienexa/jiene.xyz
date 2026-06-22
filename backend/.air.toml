@@ -1,0 +1,16 @@
+[build]
+  # Команда сборки — с тегом dev, без embed
+  cmd = "go build -tags dev -o ./tmp/server ./cmd/server/"
+  bin = "./tmp/server"
+
+  # За какими файлами следить
+  include_ext = ["go"]
+
+  # Что игнорировать
+  exclude_dir = ["tmp", "vendor", "internal/static/files"]
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true
