@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"alex-jienexa/jiene.xyz/backend/internal/handler"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
@@ -53,9 +58,36 @@ func main() {
 	static.Mount(r)
 
 	addr := ":" + getEnv("BACKEND_PORT", "8080")
-	log.Printf("jiene.xyz backend listening on %s", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
-		log.Fatalf("server failed: %v", err)
+
+	// Далее идёт пример создания graceful shutdown из примеров от Chi.
+	// ISSUE: При разработке (ввиду прослойки в виде Air) сервер не
+	// будет выключаться через graceful shutdown. При прод-деплое,
+	// скорее всего, проблемы не будет.
+
+	// Создать объект сервера
+	server := &http.Server{Addr: "0.0.0.0" + addr, Handler: r}
+	// Создаём контекст который слушает сигналы прерывания
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Запускаем сервер на фоне
+	go func() {
+		log.Printf("jiene.xyz backend listening on %s", addr)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("server failed: %v", err)
+		}
+	}()
+
+	// Слушаем сигнал прерывания
+	<-ctx.Done()
+	// Создаём контекст остановки сервера
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Запускаем graceful shutdown
+	log.Print("starting graceful shutdown...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("failed to graceful shutdown: %v", err)
 	}
 }
 

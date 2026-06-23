@@ -1,7 +1,7 @@
 [build]
   # Команда сборки — с тегом dev, без embed
   cmd = "go build -tags dev -o ./tmp/server ./cmd/server/"
-  bin = "./tmp/server"
+  entrypoint = "./tmp/server"
 
   # За какими файлами следить
   include_ext = ["go"]
