@@ -40,8 +40,6 @@ WORKDIR /app
 
 COPY --from=backend-builder /app/backend/jiene-server .
 
-# TODO[jiene]: сделать связь с переменными окружения $BACKEND_PORT
-# или типа того, так как он явно будет меняться.
-EXPOSE 8080
+EXPOSE $BACKEND_PORT
 
 CMD ["./jiene-server"]

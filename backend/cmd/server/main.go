@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"alex-jienexa/jiene.xyz/backend/internal/handler"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
@@ -16,14 +17,13 @@ import (
 )
 
 func main() {
-	// TODO[jiene]: Сделать поддержку локальных переменных
 	db, err := database.Connect(database.Config{
-		Host:     "db",
-		Port:     "5432",
-		User:     "postgres",
-		Password: "postgres",
-		DBName:   "grimoire",
-		SSLMode:  "disable",
+		Host:     getEnv("DB_HOST", "db"),
+		Port:     getEnv("DB_PORT", "5432"),
+		User:     getEnv("DB_USER", "postgres"),
+		Password: getEnv("DB_PASSWORD", "postgres"),
+		DBName:   getEnv("DB_NAME", "database"),
+		SSLMode:  getEnv("DB_SSLMODE", "disable"),
 	})
 	if err != nil {
 		log.Fatalf("failed to connect database: %v", err)
@@ -52,7 +52,7 @@ func main() {
 	// и только потом будет смотреть пути из API (нет, не будет).
 	static.Mount(r)
 
-	addr := ":8080"
+	addr := ":" + getEnv("BACKEND_PORT", "8080")
 	log.Printf("jiene.xyz backend listening on %s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("server failed: %v", err)
@@ -88,4 +88,11 @@ func buildRouter(
 	r.Post("/whoami", profileHandler.Update)
 
 	return r
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }

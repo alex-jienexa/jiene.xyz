@@ -9,8 +9,7 @@ import (
 )
 
 // Config — параметры подключения. Передаются из main.go,
-// который читает их из переменных окружения. database-пакет
-// сам не знает о .env файлах — это ответственность main.go.
+// который читает их из переменных окружения.
 type Config struct {
 	Host     string
 	Port     string
@@ -21,8 +20,7 @@ type Config struct {
 }
 
 // Connect открывает пул соединений с PostgreSQL.
-// Важно: sql.Open не устанавливает соединение немедленно —
-// он только готовит пул. Реальное соединение проверяется через Ping.
+// Реальное соединение проверяется через waitForDB.
 func Connect(cfg Config) (*sql.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
