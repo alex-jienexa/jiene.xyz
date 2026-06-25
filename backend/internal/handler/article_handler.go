@@ -1,0 +1,221 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"alex-jienexa/jiene.xyz/backend/internal/entity"
+	"alex-jienexa/jiene.xyz/backend/internal/service"
+
+	"github.com/go-chi/chi/v5"
+)
+
+// ArticleHandler переводит HTTP-запросы в вызовы ArticleService
+// и сериализует результат обратно в JSON. Сам handler не содержит
+// бизнес-логики — только разбор запроса и формирование ответа.
+// Если посмотреть на эти три слоя (handler → service → repository),
+// видно как обязанности чётко разделены: каждый слой решает одну задачу.
+type ArticleHandler struct {
+	service *service.ArticleService
+}
+
+func NewArticleHandler(s *service.ArticleService) *ArticleHandler {
+	return &ArticleHandler{service: s}
+}
+
+// articleListResponse — DTO (Data Transfer Object) для ответа API.
+// Это форма JSON, которую видит клиент — она может отличаться
+// от внутренней структуры entity.ArticleListItem. Например, здесь
+// project превращается из ProjectSlug *string в обычное поле "project".
+type articleListResponse struct {
+	Data []articleListItemDTO `json:"data"`
+	Meta paginationMeta       `json:"meta"`
+}
+
+type articleListItemDTO struct {
+	Slug               string   `json:"slug"`
+	Title              string   `json:"title"`
+	Section            string   `json:"section"`
+	Kind               string   `json:"kind"`
+	Tags               []string `json:"tags"`
+	Project            *string  `json:"project,omitempty"`
+	IsPublished        bool     `json:"is_published"`
+	PublishedAt        *string  `json:"published_at,omitempty"`
+	ReadingTimeMinutes int      `json:"reading_time_minutes"`
+}
+
+type paginationMeta struct {
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+	Total int `json:"total"`
+}
+
+// List обрабатывает GET /articles?section=&kind=&tag=&project=&page=&limit=
+func (h *ArticleHandler) List(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	filter := entity.ArticleFilter{
+		Section:     entity.ArticleSection(q.Get("section")),
+		Kind:        entity.ArticleKind(q.Get("kind")),
+		Tag:         q.Get("tag"),
+		ProjectSlug: q.Get("project"),
+		Page:        parseIntOrDefault(q.Get("page"), 1),
+		Limit:       parseIntOrDefault(q.Get("limit"), 10),
+	}
+
+	items, total, err := h.service.List(r.Context(), filter)
+	if err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	dto := articleListResponse{
+		Data: make([]articleListItemDTO, 0, len(items)),
+		Meta: paginationMeta{Page: filter.Page, Limit: filter.Limit, Total: total},
+	}
+
+	for _, item := range items {
+		dto.Data = append(dto.Data, toArticleListItemDTO(item))
+	}
+
+	respondJSON(w, http.StatusOK, dto)
+}
+
+// GetBySlug обрабатывает GET /articles/:slug
+func (h *ArticleHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	article, err := h.service.GetBySlug(r.Context(), slug)
+	if err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, toArticleDTO(article))
+}
+
+// Create обрабатывает POST /articles (защищён middleware.RequireAuth)
+func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var input entity.ArticleCreateInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+
+	article, err := h.service.Create(r.Context(), input)
+	if err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, toArticleDTO(article))
+}
+
+// Update обрабатывает PUT /articles/:slug
+func (h *ArticleHandler) Update(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	var input entity.ArticleUpdateInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+
+	article, err := h.service.Update(r.Context(), slug, input)
+	if err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, toArticleDTO(article))
+}
+
+// Delete обрабатывает DELETE /articles/:slug
+func (h *ArticleHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	if err := h.service.Delete(r.Context(), slug); err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	respondJSON(w, http.StatusNoContent, nil)
+}
+
+// --- DTO mapping helpers ---
+
+func toArticleListItemDTO(item entity.ArticleListItem) articleListItemDTO {
+	tagNames := make([]string, 0, len(item.Tags))
+	for _, t := range item.Tags {
+		tagNames = append(tagNames, t.Slug)
+	}
+
+	var publishedAt *string
+	if item.PublishedAt != nil {
+		s := item.PublishedAt.Format("2006-01-02T15:04:05Z07:00")
+		publishedAt = &s
+	}
+
+	return articleListItemDTO{
+		Slug:               item.Slug,
+		Title:              item.Title,
+		Section:            string(item.Section),
+		Kind:               string(item.Kind),
+		Tags:               tagNames,
+		Project:            item.ProjectSlug,
+		IsPublished:        item.IsPublished,
+		PublishedAt:        publishedAt,
+		ReadingTimeMinutes: item.ReadingTimeMinutes,
+	}
+}
+
+type articleDTO struct {
+	Slug        string   `json:"slug"`
+	Title       string   `json:"title"`
+	Section     string   `json:"section"`
+	Kind        string   `json:"kind"`
+	Content     string   `json:"content"`
+	Tags        []string `json:"tags"`
+	IsPublished bool     `json:"is_published"`
+	PublishedAt *string  `json:"published_at,omitempty"`
+	CreatedAt   string   `json:"created_at"`
+	UpdatedAt   string   `json:"updated_at"`
+}
+
+func toArticleDTO(a *entity.Article) articleDTO {
+	tagNames := make([]string, 0, len(a.Tags))
+	for _, t := range a.Tags {
+		tagNames = append(tagNames, t.Slug)
+	}
+
+	var publishedAt *string
+	if a.PublishedAt != nil {
+		s := a.PublishedAt.Format("2006-01-02T15:04:05Z07:00")
+		publishedAt = &s
+	}
+
+	return articleDTO{
+		Slug:        a.Slug,
+		Title:       a.Title,
+		Section:     string(a.Section),
+		Kind:        string(a.Kind),
+		Content:     a.Content,
+		Tags:        tagNames,
+		IsPublished: a.IsPublished,
+		PublishedAt: publishedAt,
+		CreatedAt:   a.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:   a.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+}
+
+func parseIntOrDefault(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return v
+}

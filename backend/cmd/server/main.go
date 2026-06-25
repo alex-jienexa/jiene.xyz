@@ -50,19 +50,22 @@ func main() {
 
 	// --- Регистрация репозиториев ---
 	profileRepo := repository.NewProfileRepository(db)
+	articleRepo := repository.NewArticleRepository(db)
 
 	// --- Регистрация сервисов ---
 	profileService := service.NewProfileService(profileRepo)
+	articleService := service.NewArticleService(articleRepo)
 
 	// --- Регистрация хендлеров ---
 	profileHandler := handler.NewProfileHandler(profileService)
 	authHandler := handler.NewAuthHandler(tokenService, jwtSecret)
+	articleHandler := handler.NewArticleHandler(articleService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	apiRouter := buildRouter(profileHandler, authHandler, tokenService)
+	apiRouter := buildRouter(profileHandler, authHandler, articleHandler, tokenService)
 	r.Mount("/api/", apiRouter)
 
 	// --- Регистрируем статику ---
@@ -112,6 +115,7 @@ func main() {
 func buildRouter(
 	profileHandler *handler.ProfileHandler,
 	authHandler *handler.AuthHandler,
+	articleHandler *handler.ArticleHandler,
 	tokenService *auth.TokenService,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -132,11 +136,17 @@ func buildRouter(
 	r.Post("/auth/login", authHandler.Login)
 
 	r.Get("/whoami", profileHandler.Get)
+	r.Get("/articles", articleHandler.List)
+	r.Get("/articles/{slug}", articleHandler.GetBySlug)
 
 	r.Group(func(r chi.Router) {
+		// Для данной группы эндпоинтов нужна аутентификация
 		r.Use(custommiddleware.RequireAuth(tokenService))
 
 		r.Put("/whoami", profileHandler.Update)
+		r.Post("/articles", articleHandler.Create)
+		r.Put("/articles/{slug}", articleHandler.Update)
+		r.Delete("/articles/{slug}", articleHandler.Delete)
 	})
 
 	return r

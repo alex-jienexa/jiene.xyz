@@ -37,9 +37,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// bcrypt.CompareHashAndPassword выполняется за константное время
-	// независимо от того, совпадает пароль или нет — это защита
-	// от timing-атак, которые могли бы угадать пароль по времени ответа.
 	err := bcrypt.CompareHashAndPassword([]byte(h.passwordHash), []byte(req.Password))
 	if err != nil {
 		respondError(w, http.StatusUnauthorized, "invalid credentials")

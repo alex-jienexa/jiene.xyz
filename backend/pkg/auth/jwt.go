@@ -15,7 +15,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// TokenService отвечает за выпуск и проверку JWT.
+// TokenService отвечает за выпуск и проверку JWT токенов.
 // Секретный ключ передаётся при создании — никогда не хардкодится
 // в коде. В main.go он читается из переменной окружения.
 type TokenService struct {
