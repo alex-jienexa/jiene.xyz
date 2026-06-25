@@ -11,9 +11,11 @@ import (
 	"time"
 
 	"alex-jienexa/jiene.xyz/backend/internal/handler"
+	custommiddleware "alex-jienexa/jiene.xyz/backend/internal/middleware"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
 	"alex-jienexa/jiene.xyz/backend/internal/service"
 	"alex-jienexa/jiene.xyz/backend/internal/static"
+	"alex-jienexa/jiene.xyz/backend/pkg/auth"
 	"alex-jienexa/jiene.xyz/backend/pkg/database"
 
 	"github.com/go-chi/chi/v5"
@@ -35,6 +37,17 @@ func main() {
 	}
 	defer db.Close() // Определяем закрытие подключения к базе данных когда заканчивается работа main
 
+	jwtSecret := getEnv("JWT_SECRET", "")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is required")
+	}
+	tokenService := auth.NewTokenService(jwtSecret, 24*time.Hour)
+
+	adminPasswordHash := getEnv("ADMIN_PASSWORD_HASH", "")
+	if adminPasswordHash == "" {
+		log.Fatal("ADMIN_PASSWORD_HASH environment variable is required")
+	}
+
 	// --- Регистрация репозиториев ---
 	profileRepo := repository.NewProfileRepository(db)
 
@@ -43,12 +56,13 @@ func main() {
 
 	// --- Регистрация хендлеров ---
 	profileHandler := handler.NewProfileHandler(profileService)
+	authHandler := handler.NewAuthHandler(tokenService, jwtSecret)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	apiRouter := buildRouter(profileHandler)
+	apiRouter := buildRouter(profileHandler, authHandler, tokenService)
 	r.Mount("/api/", apiRouter)
 
 	// --- Регистрируем статику ---
@@ -97,6 +111,8 @@ func main() {
 // здесь.
 func buildRouter(
 	profileHandler *handler.ProfileHandler,
+	authHandler *handler.AuthHandler,
+	tokenService *auth.TokenService,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -113,11 +129,15 @@ func buildRouter(
 		MaxAge:           300,
 	}))
 
+	r.Post("/auth/login", authHandler.Login)
+
 	r.Get("/whoami", profileHandler.Get)
 
-	// TODO[jiene]: сделать защищённую группу через JWT-верификацию
-	// для доступа к изменении информации о себе
-	r.Post("/whoami", profileHandler.Update)
+	r.Group(func(r chi.Router) {
+		r.Use(custommiddleware.RequireAuth(tokenService))
+
+		r.Put("/whoami", profileHandler.Update)
+	})
 
 	return r
 }
