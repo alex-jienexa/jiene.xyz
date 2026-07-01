@@ -1,0 +1,95 @@
+/* ═══════════════════════════════════════════════════════════
+   Токены (переменные) для дизайна сайта
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* == Ключевая палитра == */
+  --white:          #FFFFFF;
+  --lilac-50:       #EEEDFE;
+  --lilac-200:      #AFA9EC;
+  --purple-400:     #7F77DD;
+  --purple-600:     #534AB7;
+  --purple-800:     #3C3489;
+  --deep-purple:    #26215C;
+  --surface:        #F8F7FE;
+  --border:         rgba(127, 119, 221, 0.15);
+
+  /* == Текст == */
+  --text-primary:   #1A1625;
+  --text-secondary: #5F5E5A;
+  --text-tertiary:  #AFA9EC;
+  --text-body:      #3D3D3A;
+
+  /* == Цвета статусов проектов == */
+  --status-wip-bg:      #FAEEDA;
+  --status-wip-text:    #633806;
+  --status-concept-bg:  #E1F5EE;
+  --status-concept-text:#085041;
+  --status-pub-bg:      #EEEDFE;
+  --status-pub-text:    #3C3489;
+  --status-note-bg:     #F1EFE8;
+  --status-note-text:   #444441;
+
+  /* == Палитра терминала == */
+  --term-bg:      #14101F;
+  --term-text:    #D4CFEC;
+  --term-dim:     #6B6585;
+  --term-accent:  #7F77DD;
+  --term-hi:      #AFA9EC;
+  --term-green:   #5DCAA5;
+  --term-amber:   #EF9F27;
+
+  /* == Шрифты == */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* == Размеры шрифтов == */
+  --text-hero:    clamp(26px, 4vw, 40px);
+  --text-h1:      24px;
+  --text-h2:      18px;
+  --text-h3:      15px;
+  --text-body:    15px;
+  --text-caption: 13px;
+  --text-label:   11px;
+  --text-mono:    12px;
+
+  /* == Расстояние между элементами == */
+  --gap-card:     12px;
+  --pad-card:     16px 20px;
+  --pad-section:  48px 0;
+
+  /* == Размеры области == */
+  --max-content:  1100px;
+  --max-article:  720px;
+  --pad-desktop:  48px;
+  --pad-mobile:   20px;
+
+  /* == Радиусы == */
+  --radius-card:  12px;
+  --radius-badge: 20px;
+  --radius-tag:   20px;
+  --radius-input: 4px;
+  --radius-term:  12px;
+
+  /* == Анимации появления == */
+  --ease-out:     cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-in:      cubic-bezier(0.4, 0.0, 1.0, 1);
+  --ease-spring:  cubic-bezier(0.2, 0, 0, 1);
+
+  --dur-fast:     150ms;
+  --dur-base:     200ms;
+  --dur-slow:     300ms;
+  --dur-reveal:   400ms;
+}
+
+/* == Тёмная тема == */
+[data-theme="dark"] {
+  --white:        #14101F;
+  --surface:      #1A1530;
+  --text-primary: #D4CFEC;
+  --text-body:    #D4CFEC;
+  --text-secondary: #AFA9EC;
+  --border:       rgba(127, 119, 221, 0.2);
+  --status-note-bg:   #221E33;
+  --status-note-text: #AFA9EC;
+}
