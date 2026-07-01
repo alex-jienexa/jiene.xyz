@@ -148,7 +148,20 @@ func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusCreated, toArticleDTO(article))
 }
 
-// Update обрабатывает PUT /articles/:slug
+// Update изменяет содержание и информацию о статье
+//
+// @Summary		Изменить статью
+// @Tags		articles
+// @Accept		json
+// @Produce		json
+// @Security	BearerAuth
+// @Param		slug 	path 	string	true	"URL-идентификатор"	example(why-pf2e-is-great-for-ai)
+// @Param		body	body	entity.ArticleUpdateInput	true "Данные, которые нужно изменить"
+// @Success		200	{object}	articleDTO
+// @Failure		400	{object}	errorResponse	"Невалидные данные"
+// @Failure		401	{object}	errorResponse	"Требуется авторизация"
+// @Failure		404 {object}	errorResponse	"Статья не найдена"
+// @Router		/articles/:slug	[put]
 func (h *ArticleHandler) Update(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 
@@ -167,7 +180,18 @@ func (h *ArticleHandler) Update(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, toArticleDTO(article))
 }
 
-// Delete обрабатывает DELETE /articles/:slug
+// Delete удаляет статью из базы данных
+//
+// @Summary		Удалить статью
+// @Tags		articles
+// @Accept		json
+// @Produce		json
+// @Security	BearerAuth
+// @Param		slug 	path 	string	true	"URL-идентификатор"	example(why-pf2e-is-great-for-ai)
+// @Success		204	{object}	any				"Статья удалена"
+// @Failure		401	{object}	errorResponse	"Требуется авторизация"
+// @Failure		404 {object}	errorResponse	"Статья не найдена"
+// @Router		/articles/:slug	[delete]
 func (h *ArticleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 

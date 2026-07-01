@@ -30,6 +30,18 @@ type loginResponse struct {
 	ExpiresAt string `json:"expires_at"`
 }
 
+// Login авторизирует пользователя в базу данных
+//
+// @Summary		Авторизация пользователя
+// @Tags		Auth
+// @Accept		json
+// @Produce		json
+// @Param		body	body 	loginRequest	true	"Форма для входа"
+// @Success		200	{object}	loginResponse	"Вход успешный"
+// @Failure		400	{object}	errorResponse	"Невалидные данные"
+// @Failure		401	{object}	errorResponse	"Неверный пароль"
+// @Failure		500 {object}	errorResponse	"Внутренняя ошибка сервера"
+// @Router		/auth/login	[post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
