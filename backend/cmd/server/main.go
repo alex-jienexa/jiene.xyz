@@ -1,3 +1,11 @@
+// @title jiene.xyz API
+// @version 0.0.2
+// @description API для личного сайта Alex Jienexa
+// @host localhost:8080
+// @BasePath /api
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 package main
 
 import (
@@ -10,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "alex-jienexa/jiene.xyz/backend/docs"
 	"alex-jienexa/jiene.xyz/backend/internal/handler"
 	custommiddleware "alex-jienexa/jiene.xyz/backend/internal/middleware"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
@@ -21,6 +30,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 func main() {
@@ -67,6 +77,21 @@ func main() {
 
 	apiRouter := buildRouter(profileHandler, authHandler, articleHandler, tokenService)
 	r.Mount("/api/", apiRouter)
+
+	// --- Подключение документации ---
+	// Документация собирается автоматически при запуске dev-сервера.
+	// Чтобы обновить документацию вручную, выполните в `cd /backend`:
+	// 	`swag init -g cmd/server/main.go --output docs`
+	//
+	// Чтобы зайти в документацию, перейдите на адрес `/swagger`
+	// сервера разработки.
+	if os.Getenv("ENV") != "PROD" {
+		r.Get("/swagger/*", httpSwagger.Handler(
+			httpSwagger.URL("/swagger/doc.json"),
+		))
+	}
+	// TODO[jiene]: Сделать автоматическую генерацию документа при
+	// обновлении Air
 
 	// --- Регистрируем статику ---
 	// Делаем это последним, так как если сделать иначе, то сервер

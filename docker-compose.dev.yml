@@ -27,10 +27,10 @@ services:
       - ./backend:/app
       - go_modules:/go/pkg/mod
     env_file: "./.env"
+    environment:
+      ENV: "DEV"
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
-    #environment: 
-      # Переменные окружения бекенда
     command: >
       sh -c "go install github.com/air-verse/air@latest &&
              air -c .air.toml"

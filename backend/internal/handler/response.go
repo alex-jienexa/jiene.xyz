@@ -7,6 +7,12 @@ import (
 	"net/http"
 )
 
+// errorResponse используется как тело всех HTTP-ошибок.
+// Swag читает эту структуру для формирования документации.
+type errorResponse struct {
+	Error string `json:"error"`
+}
+
 // respondJSON и respondError — общие хелперы для всех handler'ов.
 // Без них каждый handler дублировал бы w.Header().Set(...) и
 // json.NewEncoder(w).Encode(...) — мелкое, но раздражающее повторение.

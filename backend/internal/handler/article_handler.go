@@ -51,7 +51,18 @@ type paginationMeta struct {
 	Total int `json:"total"`
 }
 
-// List обрабатывает GET /articles?section=&kind=&tag=&project=&page=&limit=
+// List возвращает список статей с поддержкой фильтрации по параметрам.
+//
+// @Summary	Получить список статей
+// @Tags	articles
+// @Produce	json
+// @Param	section	query	string	false "Раздел сайта"		Enums(chronicle,codex,lab)
+// @Param	kind 	query 	string	false "Тип контента"		Enums(article,devlog,research,note,essay)
+// @Param	tag 	query 	string	false "Slug тега контента"	example(pf2e)
+// @Param	page 	query 	int		false "Страница"			default(1)
+// @Param	limit 	query 	int		false "Статей на страницу"	default(10) maximum(50)
+// @Success	200		{object}		articleListResponse
+// @Router	/articles [get]
 func (h *ArticleHandler) List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 
@@ -82,7 +93,20 @@ func (h *ArticleHandler) List(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, dto)
 }
 
-// GetBySlug обрабатывает GET /articles/:slug
+// GetBySlug возвращает полный текст статьи.
+//
+// @Summary     Получить статью
+// @Description Возвращает полный Markdown-контент статьи по её slug.
+//
+//	Используется страницей статьи на фронтенде.
+//
+// @Tags		articles
+// @Produce	json
+// @Param	slug 	path 	string	true	"URL-идентификатор"	example(why-pf2e-is-great-for-ai)
+// @Success	200 	{object}	articleDTO
+// @Failure	404 	{object}	errorResponse	"Статья не найдена"
+// @Failure	500 	{object}	errorResponse	"Внутренняя ошибка сервера"
+// @Router	/articles/{slug}	[get]
 func (h *ArticleHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 
@@ -95,7 +119,19 @@ func (h *ArticleHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, toArticleDTO(article))
 }
 
-// Create обрабатывает POST /articles (защищён middleware.RequireAuth)
+// Create создаёт новую статью.
+//
+// @Summary		Создать статью
+// @Tags		articles
+// @Accept		json
+// @Produce		json
+// @Security	BearerAuth
+// @Param		body	body	entity.ArticleCreateInput	true "Данные статьи"
+// @Success		201	{object}	articleDTO
+// @Failure		400	{object}	errorResponse	"Невалидные данные"
+// @Failure		401	{object}	errorResponse	"Требуется авторизация"
+// @Failure		409 {object}	errorResponse	"slug уже занят"
+// @Router		/articles	[post]
 func (h *ArticleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var input entity.ArticleCreateInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
