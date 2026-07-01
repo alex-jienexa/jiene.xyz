@@ -12,13 +12,25 @@ services:
     volumes:
       # Данные сохраняются между перезапусками.
       - postgres_data:/var/lib/postgresql/data
-      # Миграции запускаются автоматически при первом старте.
-      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+  
+  migrate:
+    image: migrate/migrate:v4.17.1
+    volumes:
+      - ./backend/migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}",
+        "up"
+      ]
   
   backend:
     image: golang:1.26.4-alpine
@@ -35,8 +47,8 @@ services:
       sh -c "go install github.com/air-verse/air@latest &&
              air -c .air.toml"
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
   
   frontend:
     image: oven/bun:1.3.13-alpine
