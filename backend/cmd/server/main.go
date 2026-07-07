@@ -151,7 +151,7 @@ func buildRouter(
 	// собирается как файлы в директории `dist/`, то можно сузить
 	// список allowed origins до домена сайта.
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   []string{"http://localhost:" + getEnv("FRONTEND_PORT", "3000")},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,

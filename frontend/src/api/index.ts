@@ -17,7 +17,7 @@ async function request<T>(path: string): Promise<T> {
 
 // === Profile ===
 
-async function getProfile(): Promise<Profile> {
+export async function getProfile(): Promise<Profile> {
     return request<Profile>("/whoami");
 }
 
