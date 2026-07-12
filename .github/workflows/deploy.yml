@@ -51,6 +51,8 @@ jobs:
             exis $STATUS
 
   deploy:
+    needs: test_deploy
+    if github.ref = 'tefs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
