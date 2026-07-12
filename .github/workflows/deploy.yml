@@ -37,7 +37,7 @@ jobs:
 
             sleep 30
 
-            if curl --fail http://localhost:9090/api/health; then
+            if curl --fail http://localhost:9090/api/whoami; then
               echo "Тест пройден"
               STATUS=0
             else
