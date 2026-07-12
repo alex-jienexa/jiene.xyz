@@ -2,9 +2,54 @@ name: Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches: [ main, test_deploy ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
+  # TODO: Тесты
+
+  test-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            TEST_DIR=/var/www/jiene.xyz-test-dryrun
+            set -e
+            mkdir -p $TEST_DIR
+            cd $TEST_DIR
+
+            gir clone -b test_deploy https://github.com/alex-jienexa/jiene.xyz.git . || (git fetch && git reset --hard origin/test_deploy)
+
+            cat << 'EOF' > .env
+            $ {{ secrets.ENV_FILE }}
+            EOF
+            
+            chmod +x create_caddyfile.sh
+            ./create_caddyfile.sh
+            
+            BACKEND_PORT=9090 DB_PORT=9091 docker compose -p project-test up -d --build
+
+            sleep 30
+
+            if curl --fail http://localhost:9090/api/health; then
+              echo "Тест пройден"
+              STATUS=0
+            else
+              echo "Ошибка запуска приложения"
+              HOST_PORT=9090 DB_PORT=9091 docker compose -p project-test logs --tail=50
+              STATUS=1
+            fi
+
+            HOST_PORT=9090 DB_PORT=9091 docker compose -p project-test down -v1
+
+            exis $STATUS
+
   deploy:
     runs-on: ubuntu-latest
 
@@ -15,7 +60,6 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: ENV_FILE
           script: |
             set -e
             cd /var/www/jiene.xyz
