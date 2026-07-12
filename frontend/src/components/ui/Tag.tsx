@@ -1,7 +1,8 @@
 import { type Component } from "solid-js";
+import s from "./Tag.module.css";
 
 interface TagProps {
-  label: string;
+  label:    string;
   variant?: "purple" | "gray";
 }
 
@@ -9,7 +10,7 @@ interface TagProps {
 const Tag: Component<TagProps> = (props) => {
   const variant = () => props.variant ?? "purple";
   return (
-    <span class={`sigil sigil--${variant()}`}>{props.label}</span>
+    <span class={`${s.sigil} ${s[variant()]}`}>{props.label}</span>
   );
 };
 

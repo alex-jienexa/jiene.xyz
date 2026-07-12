@@ -1,0 +1,39 @@
+/* ── Divider ──
+   Keyframe объявлен локально в модуле — не полагаемся на глобальный main.css.
+   Линии: начальное состояние через @keyframes from {}, не через статический opacity: 0.
+   Если IO не сработает (threshold не достигнут) — линии всё равно видны
+   после fallback-таймаута в компоненте.
+── */
+
+@keyframes dividerGrow {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 36px 0;
+}
+
+.line {
+  flex: 1;
+  height: 0.5px;
+  background: rgba(127, 119, 221, 0.2);
+  transform-origin: center;
+  /* Без opacity: 0 — если анимация не запустится, линия останется видимой */
+}
+
+.lineVisible {
+  animation: dividerGrow var(--dur-reveal) var(--ease-out) both;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--lilac-200);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

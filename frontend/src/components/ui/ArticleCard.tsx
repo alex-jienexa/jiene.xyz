@@ -2,10 +2,11 @@ import { type Component } from "solid-js";
 import { A } from "@solidjs/router";
 import type { ArticleListItem } from "../../types";
 import Badge from "./Badge";
+import s from "./ArticleCard.module.css";
 
 interface ArticleCardProps {
-  article: ArticleListItem;
-  featured?: boolean;
+  article:    ArticleListItem;
+  featured?:  boolean;
   animDelay?: number;
 }
 
@@ -16,7 +17,6 @@ function formatDate(iso?: string): string {
   }).split(".").join("-");
 }
 
-// Путь статьи зависит от раздела, в котором она живёт
 function articlePath(article: ArticleListItem): string {
   if (article.section === "codex" && article.project) {
     return `/codex/${article.project}/${article.slug}`;
@@ -32,22 +32,23 @@ const ArticleCard: Component<ArticleCardProps> = (props) => {
   return (
     <A
       href={articlePath(props.article)}
-      class={`card animate-fade-up ${props.featured ? "card--featured" : ""}`}
+      class={`${s.card} animate-fade-up ${props.featured ? s.featured : ""}`}
       style={style()}
     >
-      <div class="card__meta">
-        <span class="card__date">{formatDate(props.article.published_at)}</span>
+      <div class={s.meta}>
+        {/* tabular-nums applied in CSS — dates stay stable on sort */}
+        <span class={s.date}>{formatDate(props.article.published_at)}</span>
         <Badge value={props.article.kind} />
       </div>
 
-      <h3 class="card__title">{props.article.title}</h3>
+      <h3 class={s.title}>{props.article.title}</h3>
 
-      <footer class="card__foot">
+      <footer class={s.foot}>
         {props.article.project && (
-          <span class="card__project">{props.article.project}</span>
+          <span class={s.project}>{props.article.project}</span>
         )}
-        {props.article.project && <span class="card__sep"> · </span>}
-        <span class="card__kind">{props.article.reading_time_minutes} мин</span>
+        {props.article.project && <span class={s.sep}> · </span>}
+        <span class={s.kind}>{props.article.reading_time_minutes} мин</span>
       </footer>
     </A>
   );

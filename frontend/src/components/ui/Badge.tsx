@@ -1,14 +1,13 @@
 import { type Component } from "solid-js";
 import type { ArticleKind, ProjectStatus } from "../../types";
+import s from "./Badge.module.css";
 
-// Семантические цвета из design document, секция 2
 const kindStyles: Record<string, string> = {
-  devlog:   "wip",
-  research: "published",
-  essay:    "published",
-  note:     "note",
-  article:  "published",
-  // ProjectStatus
+  devlog:      "wip",
+  research:    "published",
+  essay:       "published",
+  note:        "note",
+  article:     "published",
   in_progress: "wip",
   concept:     "idea",
   completed:   "published",
@@ -25,7 +24,7 @@ const kindLabels: Record<string, string> = {
   concept:     "concept",
   completed:   "completed",
   abandoned:   "abandoned",
-  // section labels
+  
   chronicle:   "chronicle",
   codex:       "codex",
   lab:         "lab",
@@ -38,10 +37,10 @@ interface BadgeProps {
 
 const Badge: Component<BadgeProps> = (props) => {
   const variant = () => kindStyles[props.value] ?? "note";
-  const label = () => kindLabels[props.value] ?? props.value;
+  const label   = () => kindLabels[props.value] ?? props.value;
 
   return (
-    <span class={`badge badge--${variant()} ${props.class ?? ""}`}>
+    <span class={`${s.badge} ${s[variant()]} ${props.class ?? ""}`}>
       {label()}
     </span>
   );

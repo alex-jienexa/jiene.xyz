@@ -1,0 +1,133 @@
+/* ── ProjectPage ── */
+
+.page { padding: 48px 0 80px; }
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--lilac-200);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.crumb {
+  color: var(--lilac-200);
+  text-decoration: none;
+  transition-property: color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.crumb:hover { color: var(--purple-400); }
+.crumbAccent { color: var(--purple-400); }
+.sep         { color: rgba(127, 119, 221, 0.28); }
+
+/* ── Project header ── */
+.header { margin-bottom: 32px; }
+
+.chapter {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--purple-400);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--text-h1);
+  font-weight: 500;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  max-width: 600px;
+  text-wrap: pretty;
+}
+
+/* ── Tabs ──
+   Interruptible transitions on color + border-color (animations.md).
+   Min-height 40px hit area (surfaces.md).
+── */
+.tabs {
+  display: flex;
+  border-bottom: 0.5px solid rgba(127, 119, 221, 0.15);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.tab {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  background: none;
+  border-bottom: 1.5px solid transparent;
+  padding: 8px 16px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  margin-bottom: -0.5px;
+  transition-property: color, border-color, background-color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.tab:hover  { color: var(--purple-400); }
+
+.tabActive {
+  color: var(--purple-400);
+  border-bottom-color: var(--purple-400);
+  background-color: var(--lilac-50);
+}
+
+/* ── Cards grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .grid { grid-template-columns: 1fr; } }
+
+/* ── Empty state ── */
+.empty {
+  padding: 48px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.emptySub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* ── Skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--white) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--r-lg);
+  height: 300px;
+}

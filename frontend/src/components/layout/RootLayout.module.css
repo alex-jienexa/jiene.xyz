@@ -1,0 +1,13 @@
+/* RootLayout — shell that wraps every page */
+
+.main { padding-top: var(--nav-h); }
+
+.content {
+  max-width: var(--max-content);
+  margin: 0 auto;
+  padding: 0 var(--pad-desktop);
+}
+
+@media (max-width: 640px) {
+  .content { padding: 0 var(--pad-mobile); }
+}

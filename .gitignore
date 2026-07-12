@@ -10,6 +10,7 @@ app.config.timestamp_*.js
 .env
 .env*.local
 */docs/
+*/go.sum
 
 # dependencies
 frontend/node_modules

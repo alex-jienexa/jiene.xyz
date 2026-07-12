@@ -18,7 +18,11 @@ import (
 	"syscall"
 	"time"
 
-	_ "alex-jienexa/jiene.xyz/backend/docs"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+
 	"alex-jienexa/jiene.xyz/backend/internal/handler"
 	custommiddleware "alex-jienexa/jiene.xyz/backend/internal/middleware"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
@@ -27,10 +31,7 @@ import (
 	"alex-jienexa/jiene.xyz/backend/pkg/auth"
 	"alex-jienexa/jiene.xyz/backend/pkg/database"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
+	_ "alex-jienexa/jiene.xyz/backend/docs"
 )
 
 func main() {
@@ -82,6 +83,8 @@ func main() {
 	// Документация собирается автоматически при запуске dev-сервера.
 	// Чтобы обновить документацию вручную, выполните в `cd /backend`:
 	// 	`swag init -g cmd/server/main.go --output docs`
+	// (Убедитесь, что у вас установлен github.com/swaggo/swag через
+	// `go install github.com/swaggo/swag/cmd/swag@latest`)
 	//
 	// Чтобы зайти в документацию, перейдите на адрес `/swagger`
 	// сервера разработки.
