@@ -24,10 +24,10 @@ jobs:
             mkdir -p $TEST_DIR
             cd $TEST_DIR
 
-            gir clone -b test_deploy https://github.com/alex-jienexa/jiene.xyz.git . || (git fetch && git reset --hard origin/test_deploy)
+            git clone -b test_deploy https://github.com/alex-jienexa/jiene.xyz.git . || (git fetch && git reset --hard origin/test_deploy)
 
             cat << 'EOF' > .env
-            $ {{ secrets.ENV_FILE }}
+            ${{ secrets.ENV_FILE }}
             EOF
             
             chmod +x create_caddyfile.sh
@@ -35,20 +35,20 @@ jobs:
             
             BACKEND_PORT=9090 DB_PORT=9091 docker compose -p project-test up -d --build
 
-            sleep 30
+            sleep 15
 
-            if curl --fail http://localhost:9090/api/health; then
+            if curl --fail http://localhost:9090/api/whoami; then
               echo "Тест пройден"
               STATUS=0
             else
               echo "Ошибка запуска приложения"
-              HOST_PORT=9090 DB_PORT=9091 docker compose -p project-test logs --tail=50
+              BACKEND_PORT=9090 DB_PORT=9091 docker compose -p project-test logs --tail=50
               STATUS=1
             fi
 
-            HOST_PORT=9090 DB_PORT=9091 docker compose -p project-test down -v1
+            BACKEND_PORT=9090 DB_PORT=9091 docker compose -p project-test down -v
 
-            exis $STATUS
+            exit $STATUS
 
   deploy:
     needs: test-deploy

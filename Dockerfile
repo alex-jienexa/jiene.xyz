@@ -26,6 +26,10 @@ RUN go mod download
 COPY backend/ .
 COPY --from=frontend-builder /app/frontend/dist ./internal/static/files/
 
+# Собираем документацию для запуска
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN swag init -g cmd/server/main.go --output docs
+
 # Собираем бинарник
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-s -w" \

@@ -37,7 +37,7 @@ services:
     command:
       [
         "-path", "/migrations",
-        "-database", "postgres://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}",
+        "-database", "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}",
         "up"
       ]
 
@@ -49,6 +49,7 @@ services:
     env_file: "./.env"
     environment:
       ENV: "PROD"
+      BACKEND_PORT: ${BACKEND_PORT}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     depends_on:
