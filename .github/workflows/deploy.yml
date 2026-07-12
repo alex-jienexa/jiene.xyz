@@ -35,7 +35,7 @@ jobs:
             
             BACKEND_PORT=9090 DB_PORT=9091 docker compose -p project-test up -d --build
 
-            sleep 30
+            sleep 15
 
             if curl --fail http://localhost:9090/api/whoami; then
               echo "Тест пройден"
