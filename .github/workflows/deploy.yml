@@ -11,7 +11,8 @@ jobs:
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
-        envs: ENV_FILE
+        env:
+          ENV_FILE: ${{ ENV_FILE }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
@@ -21,6 +22,7 @@ jobs:
             set -e
             cd /var/www/jiene.xyz
             git pull origin main
+            echo "$ENV_FILE" > .env
             chmod +x create_caddyfile.sh
             ./create_caddyfile.sh
             docker compose down
