@@ -1,0 +1,98 @@
+@import "./tokens.css";
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  /* font-smoothing once at root — never per element (typography.md) */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--text-body);
+  background: var(--surface);
+  min-height: 100dvh;
+}
+
+a      { color: inherit; text-decoration: none; }
+img    { max-width: 100%; display: block; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input  { font-family: inherit; }
+
+/* text-wrap: balance on headings, pretty on paragraphs (typography.md) */
+h1, h2, h3, h4 { text-wrap: balance; }
+p, li           { text-wrap: pretty; }
+
+/* Focus ring — single definition used everywhere */
+:focus-visible {
+  outline: 2px solid var(--purple-400);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--lilac-50);
+  border: 0.5px solid var(--lilac-200);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+  color: var(--purple-800);
+}
+
+/* ── Shared keyframes — referenced by module CSS files ── */
+
+/* One-shot page/card enter (animations.md — keyframe for staged sequences) */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+/* Status dot pulse */
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(29, 158, 117, 0.5); }
+  50%       { box-shadow: 0 0 0 4px rgba(29, 158, 117, 0); }
+}
+
+/* Divider line grow from centre */
+@keyframes lineGrow {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* Terminal slide-down enter */
+@keyframes termEnter {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Backdrop fade */
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Shared utility used directly on page root divs */
+.animate-fade-up {
+  animation: fadeUp var(--dur-slow) var(--ease-out) both;
+}
+
+/* Reduced motion — disables everything (animations.md) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

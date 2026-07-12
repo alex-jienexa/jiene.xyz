@@ -1,0 +1,98 @@
+/* ── ChroniclesPage ── */
+
+.page { padding: 48px 0 80px; }
+
+.header { margin-bottom: 32px; }
+
+.chapter {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--purple-400);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: var(--text-h1);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  text-wrap: balance;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* ── Filter row ──
+   Shadow ring instead of border on buttons; interruptible transitions.
+── */
+.filterRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.filterBtn {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--text-secondary);
+  background: var(--status-note-bg);
+  box-shadow: 0 0 0 0.5px var(--status-note-border);
+  border-radius: var(--r-pill);
+  padding: 4px 12px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  transition-property: background-color, box-shadow, color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.filterBtn:hover {
+  background-color: var(--lilac-50);
+  box-shadow: 0 0 0 0.5px var(--lilac-200);
+  color: var(--purple-800);
+}
+
+.filterBtnActive {
+  background-color: var(--lilac-50);
+  box-shadow: 0 0 0 0.5px var(--lilac-200);
+  color: var(--purple-800);
+}
+
+/* ── Cards grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .grid { grid-template-columns: 1fr; } }
+
+/* ── Empty state ── */
+.empty {
+  padding: 48px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ── Skeletons ── */
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--white) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--r-lg);
+  height: 120px;
+}

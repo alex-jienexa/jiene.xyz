@@ -1,0 +1,105 @@
+/* ════════════════════════════════════════════════════════════
+   GRIMOIRE OS — Design Tokens
+   Only variables live here. No component classes.
+   ════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap');
+
+:root {
+  --white:          #FFFFFF;
+  --surface:        #F8F7FE;
+  --lilac-50:       #EEEDFE;
+  --lilac-200:      #AFA9EC;
+  --purple-400:     #7F77DD;
+  --purple-600:     #534AB7;
+  --purple-800:     #3C3489;
+
+  --text-primary:   #1A1625;
+  --text-secondary: #5F5E5A;
+  --text-tertiary:  #AFA9EC;
+  --text-body:      #3D3D3A;
+
+  /* shadows-as-borders — adapt to any background (surfaces.md) */
+  --shadow-border:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.06),
+    0px 1px 2px -1px rgba(0, 0, 0, 0.06),
+    0px 2px 4px 0px rgba(0, 0, 0, 0.04);
+  --shadow-border-hover:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.09),
+    0px 1px 2px -1px rgba(0, 0, 0, 0.09),
+    0px 3px 6px 0px rgba(0, 0, 0, 0.06);
+  --shadow-border-accent:
+    2px 0 0 0 var(--purple-400),
+    0px 0px 0px 1px rgba(0, 0, 0, 0.06),
+    0px 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-border-accent-hover:
+    2px 0 0 0 var(--purple-600),
+    0px 0px 0px 1px rgba(0, 0, 0, 0.09),
+    0px 2px 6px 0px rgba(0, 0, 0, 0.07);
+
+  --status-wip-bg:       #FAEEDA;
+  --status-wip-text:     #633806;
+  --status-wip-border:   rgba(99, 56, 6, 0.2);
+  --status-idea-bg:      #E1F5EE;
+  --status-idea-text:    #085041;
+  --status-idea-border:  rgba(8, 80, 65, 0.2);
+  --status-pub-bg:       #EEEDFE;
+  --status-pub-text:     #3C3489;
+  --status-note-bg:      #F1EFE8;
+  --status-note-text:    #444441;
+  --status-note-border:  rgba(68, 68, 65, 0.15);
+  --status-green:        #1D9E75;
+
+  --term-bg:      #14101F;
+  --term-text:    #D4CFEC;
+  --term-dim:     #6B6585;
+  --term-accent:  #7F77DD;
+  --term-hi:      #AFA9EC;
+  --term-green:   #5DCAA5;
+  --term-amber:   #EF9F27;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --text-hero:  clamp(26px, 4vw, 40px);
+  --text-h1:    24px;
+  --text-h2:    18px;
+  --text-h3:    15px;
+  --text-body:  15px;
+  --text-label: 11px;
+  --text-mono:  12px;
+
+  --max-content: 1100px;
+  --max-article: 720px;
+  --pad-desktop: 48px;
+  --pad-mobile:  20px;
+  --nav-h:       52px;
+
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:   12px;
+  --r-pill: 20px;
+  --r-term: 12px;
+
+  --ease-out:    cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.2, 0, 0, 1);
+
+  --dur-fast:   150ms;
+  --dur-base:   200ms;
+  --dur-slow:   300ms;
+  --dur-reveal: 400ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --white:          #14101F;
+    --surface:        #1A1530;
+    --text-primary:   #D4CFEC;
+    --text-body:      #D4CFEC;
+    --text-secondary: #AFA9EC;
+    --shadow-border:       0 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-border-hover: 0 0 0 1px rgba(255, 255, 255, 0.13);
+    --status-note-bg:   #221E33;
+    --status-note-text: #AFA9EC;
+  }
+}

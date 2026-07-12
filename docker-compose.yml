@@ -1,53 +1,59 @@
-version: "3.9"
+# docker-compose.yml для локальной разработки.
+# Запускает только PostgreSQL — Go и Node запускаются отдельно
+# чтобы сохранить hot reload.
+#
+# Использование:
+#   docker-compose up -d        # запустить БД в фоне
+#   docker-compose down         # остановить
+#   docker-compose down -v      # остановить и удалить данные
 
 services:
-  # При разработке лучше этот сервис комментировать, так
-  # как он занимает важные порта 80 и 443.
-  # Доступ к приложениям можно и так получить через другие
-  # порты, например, 8080 для backend и 3000 для app.
-  # caddy:
-  #   image: caddy:latest
-  #   container_name: caddy
-  #   restart: unless-stopped
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./Caddyfile:/etc/caddy/Caddyfile
-  #     - caddy_data:/data
-  #     - caddy_config:/config
-  #   depends_on:
-  #     - app
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      args:
-        - BUILD_MODE=vendor # Измените на default, если не нужен режим vendor
-    container_name: backend
+  db:
+    image: postgres:16-alpine
     restart: unless-stopped
-    ports:
-      - "8080:8080"
-    depends_on:
-      - redis
     environment:
-      - REDIS_ADDR=redis:6379
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      # Данные сохраняются между перезапусками.
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate:v4.17.1
+    volumes:
+      - ./backend/migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}",
+        "up"
+      ]
 
   app:
-    build: ./frontend
-    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
-    expose:
-      - "3000"
-
-  redis:
-    image: redis:8-alpine
-    container_name: redis
-    restart: unless-stopped
+    env_file: "./.env"
+    environment:
+      ENV: "PROD"
     ports:
-      - "6379:6379"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
-  caddy_data:
-  caddy_config:
+  postgres_data:

@@ -1,0 +1,196 @@
+/* ── OtherPages (About + Laboratory) ── */
+
+.page { padding: 48px 0 80px; }
+
+/* ── Shared page header ── */
+.pageHeader { margin-bottom: 32px; }
+
+.chapter {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--purple-400);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.pageTitle {
+  font-size: var(--text-h1);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  text-wrap: balance;
+}
+
+.pageSub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-wrap: pretty;
+}
+
+/* ════════════════════════════════════
+   ABOUT PAGE
+   ════════════════════════════════════ */
+
+.aboutContent { max-width: var(--max-article); }
+
+/* Lead paragraph — left border style (design.md §7) */
+.lead {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  border-left: 2px solid var(--lilac-200);
+  padding-left: 14px;
+  margin-bottom: 20px;
+  text-wrap: pretty;
+  font-style: normal;
+}
+
+.body {
+  font-size: var(--text-body);
+  line-height: 1.7;
+  color: var(--text-body);
+  margin-bottom: 16px;
+  text-wrap: pretty;
+}
+
+/* Stack groups */
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+.stackGroup { display: flex; flex-direction: column; gap: 8px; }
+
+.stackLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.tagRow { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Contact block */
+.contact { display: flex; flex-direction: column; gap: 14px; }
+
+/* Status dot */
+.statusRow { display: flex; align-items: center; gap: 8px; }
+
+.dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-green);
+  flex-shrink: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.statusText { font-size: 12px; color: var(--text-secondary); }
+
+.contactLinks { display: flex; flex-direction: column; gap: 6px; }
+
+.contactLink {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--purple-400);
+  transition-property: color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.contactLink:hover { color: var(--purple-600); }
+
+/* ════════════════════════════════════
+   LABORATORY PAGE
+   ════════════════════════════════════ */
+
+/* ── Cards grid ── */
+.labGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1024px) { .labGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .labGrid { grid-template-columns: 1fr; } }
+
+/* Normal lab card */
+.labCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--white);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  min-height: 140px;
+  box-shadow: var(--shadow-border);
+  transition-property: box-shadow, transform;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.labCard:hover {
+  box-shadow: var(--shadow-border-hover);
+  transform: translateY(-1px);
+}
+
+.labMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.labDate {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--lilac-200);
+  font-variant-numeric: tabular-nums;
+}
+
+.labTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.labDesc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Classified card — dashed appearance, locked */
+.classified {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  min-height: 140px;
+  opacity: 0.6;
+  cursor: default;
+  background-color: var(--surface);
+  /* Dashed via repeating-gradient — more faithful to "locked" feel than dashed border */
+  background-image:
+    repeating-linear-gradient(90deg,  rgba(127,119,221,0.12) 0, rgba(127,119,221,0.12) 4px, transparent 4px, transparent 12px),
+    repeating-linear-gradient(180deg, rgba(127,119,221,0.12) 0, rgba(127,119,221,0.12) 4px, transparent 4px, transparent 12px);
+}
+
+.classifiedLabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--lilac-200);
+  letter-spacing: 0.1em;
+}
+
+.classifiedHint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  text-wrap: pretty;
+}
