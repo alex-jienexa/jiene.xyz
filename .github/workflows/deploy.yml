@@ -27,7 +27,7 @@ jobs:
             git clone -b test_deploy https://github.com/alex-jienexa/jiene.xyz.git . || (git fetch && git reset --hard origin/test_deploy)
 
             cat << 'EOF' > .env
-            $ {{ secrets.ENV_FILE }}
+            ${{ secrets.ENV_FILE }}
             EOF
             
             chmod +x create_caddyfile.sh
@@ -46,9 +46,9 @@ jobs:
               STATUS=1
             fi
 
-            BACKEND_PORT=9090 DB_PORT=9091 docker compose -p project-test down -v1
+            BACKEND_PORT=9090 DB_PORT=9091 docker compose -p project-test down -v
 
-            exis $STATUS
+            exit $STATUS
 
   deploy:
     needs: test-deploy
