@@ -35,6 +35,7 @@ services:
   backend:
     image: golang:1.26.4-alpine
     working_dir: /app
+    init: true
     volumes:
       - ./backend:/app
       - go_modules:/go/pkg/mod
