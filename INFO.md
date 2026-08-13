@@ -409,10 +409,189 @@ type articleDTO struct {
 
 #### Единая точка возврата ошибок
 
+Этот принцип дополняет принцип единой функции для оборачивания ответа протокола HTTP.
+Во-первых, используется метод `respondError()`, чуть которого в вызове `respondJSON()` с передачей сообщения об ошибке:
+```go
+func respondError(w http.ResponseWriter, status int, message string) {
+	respondJSON(w, status, map[string]string{"error": message})
+}
+```
+Во-вторых, имеется отдельный метод для соответствия ошибок реализации репозитория с HTTP-ошибками.
+Это единственное место в проекте, где идёт соответствие между самим приложением и HTTP, минуя бизнес-логику.
+Однако, при добавлении новых типов ошибок в `entity/errors.go` можно будет лишь добавить новую ошибку в `handlers/response.go`, чтобы ошибки легко в любюом слое приложения, в том числе прикладном.
+```go
+func mapDomainError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, entity.ErrNotFound):
+		respondError(w, http.StatusNotFound, "not found")
+	case errors.Is(err, entity.ErrAlreadyExists):
+		respondError(w, http.StatusConflict, "already exists")
+	case errors.Is(err, entity.ErrInvalidInput):
+		respondError(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, entity.ErrUnauthorized):
+		respondError(w, http.StatusUnauthorized, "unauthorized")
+	// ...дополнительные ошииюки через `case errors.Is(...)
+	default:
+		// Другие ошибки считаются ошибками сервера и не отображаются для фронтенда/пользователя.
+		respondError(w, http.StatusInternalServerError, "internal server error")
+	}
+}
+```
+
 #### Swagger
+
+В функциях хендлера описаны специальные Swagger-нотации сразу после документации метода:
+```go
+// List возвращает список статей с поддержкой фильтрации по параметрам.
+//
+// @Summary	Получить список статей
+// @Tags	articles
+// @Produce	json
+// @Param	section	query	string	false "Раздел сайта"		Enums(chronicle,codex,lab)
+// @Param	kind 	query 	string	false "Тип контента"		Enums(article,devlog,research,note,essay)
+// @Param	tag 	query 	string	false "Slug тега контента"	example(pf2e)
+// @Param	page 	query 	int		false "Страница"			default(1)
+// @Param	limit 	query 	int		false "Статей на страницу"	default(10) maximum(50)
+// @Success	200		{object}		articleListResponse
+// @Router	/articles [get]
+func (h *ArticleHandler) List(w http.ResponseWriter, r *http.Request) {
+	//...
+}
+```
+Такие комментарици специально считываются утилитой `swag` для генерации документации.
+Все они генерируются в директории `docs/`.
+
+Команда генерации происходит автоматически через docker, для prod в `Dockerfile`:
+```Dockerfile
+# === STAGE 2: Backend builder ===
+# ...
+
+# Собираем документацию для запуска
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN swag init -g cmd/server/main.go --output docs
+```
+
+Также документация собирается и в dev-режиме, но нужно перепроверить действительно ли это так.
+Чтобы обновить документацию, см. `/cmd/main.go`:
+```go
+// --- Подключение документации ---
+// Документация собирается автоматически при запуске dev-сервера.
+// Чтобы обновить документацию вручную, выполните в `cd /backend`:
+// 	`swag init -g cmd/server/main.go --output docs`
+// (Убедитесь, что у вас установлен github.com/swaggo/swag через
+// `go install github.com/swaggo/swag/cmd/swag@latest`)
+//
+// Чтобы зайти в документацию, перейдите на адрес `/swagger`
+// сервера разработки.
+if os.Getenv("ENV") != "PROD" {
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+}
+```
 
 ### Middleware
 
+Middleware является промежуточным слоем между внешним запросом от пользователя и его обработкой в хендлере.
+Обычно оно используется для проверки куки/заголовков, чтобы пропустить запрос дальше или заблокировать его (например, если пользователь не авторизирован).
+
+В плане программной реализации используется фабричный метод, который возвращает метод проверки запроса.
+Сейчас релизован только `RequireAuth()`, который проверяет аутентификацию пользователя:
+```go
+	func RequireAuth(tokenService *auth.TokenService) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            // Проверка токена...
+
+			// Кладём роль в context — handler может прочитать её
+			// если понадобится более гранулярная проверка прав в будущем.
+			ctx := context.WithValue(r.Context(), roleContextKey, claims.Role)
+			next.ServeHTTP(w, r.WithContext(ctx)) // Обработка запроса дальше
+
+			// Если что-то не подходит, то функция просто возвращает ответ с ошибкой и делает `return`, не пропуская запрос дальше.
+			/*
+			writeUnauthorized(w, "invalid Authorization header format")
+			return
+			*/
+        })
+    }
+}
+```
+Такой метод применяется точечно, только к тем методам, где необходима подобная проверка.
+Это реализовано с помощью эндпоинт-групп в `main.go`:
+```go
+r.Group(func(r chi.Router) {
+    r.Use(customMiddleware.RequireAuth(tokenService)) // Используем нужный middleware
+    r.Put("/whoami", profileHandler.Update)
+    r.Post("/articles", articleHandler.Create)
+    // ...
+})
+```
+Так, публичные эндпоинты остаются без авторизации, а приватные (PUT/POST/DELETE/...) защищены.
+
+#### Передача контекста из middleware
+
+Чтобы передать контекст обработки запроса между middleware и handler используется приватный тип `contextKey`:
+```go
+// contextKey — приватный тип для ключей в context.Context.
+type contextKey string
+const roleContextKey contextKey = "role"
+```
+Делается отдельный тип, чтобы избежать коллизии ключей, если другой положат дополнительную информацию в context под схожим именем.
+На данный момент это никак не обрабатывается, но это задел на будущее - обработка прав пользователей.
+
 ### Точка входа
 
+Все точки входа располагаются в директории `/backend/cmd`.
+Каждая точка входа являетися отдельной директорией, которая содержит свой main-файл.
+Делается это для сборки main-файлов компилятором Golang:
+```bash
+go build ./cmd/server # Собираем основной сервер
+```
+Всего есть два варианта точек входа в приложение:
+- `cmd/server` - основной сервер приложения.
+Там собираются все зависимости приложения (Сущности -> Репозитории -> Сервисы -> Хендлеры) с дальнейшей передачей в роутеры.
+Для маленького проекта имеется прямая видимость всех связей.
+Однако, с расширением проекта требуется более другая реализация dependency injection.
+- `cmd/hashpassword` - отдельная CLI-утилита для генерации хэша bcrypt для пароля администратора сайта.
+Она никак не связана с основным сервером, имеет лишь вспомогательную связь для работы (чтобы отправлять защищённые методы нужен данный ключ).
+Для запуска достаточно выполнить `go run ./cmd/hashpassword "password"`, подробности для генерации ключей смотрите в `/backend/README.md`.
+
 #### Graceful shutdown
+
+Основная идея данного паттерна - правильное отключение сервера с закрытием всех текущих HTTP-соединений.
+Если сервер будет "грязно" остановлен во время некоторой операции, то это может привести к повреждению данных или потерянным обновлениям.
+
+В Golang это выполняется через следующую конструкцию в `cmd/server/main.go`:
+```go
+// Слушаем сигнал прерывания...
+ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+defer stop() // <- При внезапном окончании main-функции, мы подаём функцию `stop()`, чтобы сервер не зависал на фоне после работы.
+
+// Запускаем сервер на фоне
+go func() {
+	log.Printf("jiene.xyz backend listening on %s", addr)
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalf("server failed: %v", err)
+	}
+}()
+
+// Слушаем сигнал прерывания
+<-ctx.Done()
+// Создаём контекст остановки сервера
+shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+// Запускаем graceful shutdown
+log.Print("starting graceful shutdown...")
+if err := server.Shutdown(shutdownCtx); err != nil {
+	log.Fatalf("failed to graceful shutdown: %v", err)
+}
+```
+
+Docker/система шлёт сигнал остановки -> сервер ждёт некоторое время (в программе - до 30 секунд), ожидая окончания уже начатых запросов.
+Когда сервер убедится, что запросов никаких нет - сервер закрывается.
+
+Важным моментом является то, что при работе с Air (то есть в dev-окружении), данная схема не работает как положено.
+Сигнал прерывания не передаётся как надо. 
+Для Dev-окружения это может быть не критично, а в Prod'е Air не применяется, так что это может быть не критично.
