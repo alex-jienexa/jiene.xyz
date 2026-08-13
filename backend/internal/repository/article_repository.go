@@ -12,4 +12,5 @@ type ArticleRepository interface {
 	Create(ctx context.Context, input entity.ArticleCreateInput) (*entity.Article, error)
 	Update(ctx context.Context, slug string, input entity.ArticleUpdateInput) (*entity.Article, error)
 	Delete(ctx context.Context, slug string) error
+	Publish(ctx context.Context, slug string) error
 }

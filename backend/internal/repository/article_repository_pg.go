@@ -313,6 +313,28 @@ func (r *articlePostgresRepository) Delete(ctx context.Context, slug string) err
 	return nil
 }
 
+func (r *articlePostgresRepository) Publish(ctx context.Context, slug string) error {
+	// Делается углублёненая реализация через SQL-язык.
+	const publishQuery = `
+		UPDATE articles 
+		SET is_published = true, published_at = COALESCE(published_at, now())
+		WHERE slug = $1 AND is_published = false
+		` // Проверка на публикацию, чтобы не публиковать уже опубликованный пост
+
+	result, err := r.db.ExecContext(ctx, publishQuery)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return entity.ErrNotFound
+	}
+	return nil
+}
+
 // getTagsForArticle — приватный хелпер, переиспользуется в List, GetBySlug, Create, Update.
 func (r *articlePostgresRepository) getTagsForArticle(ctx context.Context, slug string) ([]entity.Tag, error) {
 	const query = `

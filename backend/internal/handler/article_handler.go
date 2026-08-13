@@ -203,6 +203,20 @@ func (h *ArticleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusNoContent, nil)
 }
 
+// Delete удаляет статью из базы данных
+//
+// Пока без Swagger-doc, напишу позднее, когда полностью проверится работа админ-панели.
+func (h *ArticleHandler) Publish(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	if err := h.service.Publish(r.Context(), slug); err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	respondJSON(w, http.StatusNoContent, nil)
+}
+
 // --- DTO mapping helpers ---
 
 func toArticleListItemDTO(item entity.ArticleListItem) articleListItemDTO {

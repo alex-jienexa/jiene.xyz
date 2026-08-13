@@ -66,6 +66,11 @@ func (s *ArticleService) Delete(ctx context.Context, slug string) error {
 	return s.repo.Delete(ctx, slug)
 }
 
+func (s *ArticleService) Publish(ctx context.Context, slug string) error {
+	// TODO: решить, нужно ли вообще возвращать статью при её публикации?
+	return s.repo.Publish(ctx, slug)
+}
+
 func (s *ArticleService) validateCreateInput(input entity.ArticleCreateInput) error {
 	if strings.TrimSpace(input.Title) == "" {
 		return fmt.Errorf("%w: title is required", entity.ErrInvalidInput)
