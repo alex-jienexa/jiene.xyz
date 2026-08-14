@@ -26,7 +26,7 @@ export function isAdmin(): boolean {
     return session()?.role === "admin";
 }
 
-export function setSesstion(next: Session) {
+export function setSession(next: Session) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSessionSignal(next);
 }
