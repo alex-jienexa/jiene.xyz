@@ -390,20 +390,3 @@ func (r *articlePostgresRepository) attachTags(ctx context.Context, tx *sql.Tx, 
 	}
 	return nil
 }
-
-// isUniqueViolation проверяет код ошибки PostgreSQL для нарушения
-// уникального constraint (23505). Это единственное место в проекте,
-// которое знает о специфике pq-драйвера — изолировано внутри repository.
-func isUniqueViolation(err error) bool {
-	if err == nil {
-		return false
-	}
-	return strings.Contains(err.Error(), "23505")
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
