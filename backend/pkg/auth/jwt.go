@@ -53,7 +53,7 @@ func (s *TokenService) GenerateAdminToken() (string, time.Time, error) {
 func (s *TokenService) VerifyToken(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
 		// Защита от атаки "alg confusion": явно проверяем,
 		// что алгоритм подписи токена — именно тот, что мы ожидаем.
 		// Без этой проверки злоумышленник теоретически может
