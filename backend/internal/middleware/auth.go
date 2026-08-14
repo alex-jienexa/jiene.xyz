@@ -11,7 +11,7 @@ import (
 // contextKey — приватный тип для ключей в context.Context.
 type contextKey string
 
-const roleContextKey contextKey = "role"
+const claimsContextKey contextKey = "claims"
 
 // RequireAuth — middleware, защищающий admin-эндпоинты.
 // Извлекает токен из заголовка Authorization, проверяет подпись
@@ -39,12 +39,23 @@ func RequireAuth(tokenService *auth.TokenService) func(http.Handler) http.Handle
 				return
 			}
 
-			// Кладём роль в context — handler может прочитать её
-			// если понадобится более гранулярная проверка прав в будущем.
-			ctx := context.WithValue(r.Context(), roleContextKey, claims.Role)
+			// Кладём claims целиком (а не только role) — до появления
+			// многопользовательского режима это было не нужно, но теперь
+			// handler'ам (например, будущей атрибуции статей по автору)
+			// понадобится знать, КТО именно сделал запрос, а не только
+			// с какой ролью.
+			ctx := context.WithValue(r.Context(), claimsContextKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// ClaimsFromContext достаёт claims текущего запроса, положенные RequireAuth.
+// Возвращает ok=false, если запрос прошёл без аутентификации
+// (не должно случаться на защищённых маршрутах, но лучше проверять явно).
+func ClaimsFromContext(ctx context.Context) (*auth.Claims, bool) {
+	claims, ok := ctx.Value(claimsContextKey).(*auth.Claims)
+	return claims, ok
 }
 
 func writeUnauthorized(w http.ResponseWriter, message string) {
