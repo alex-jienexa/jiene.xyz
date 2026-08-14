@@ -54,14 +54,10 @@ func main() {
 	}
 	tokenService := auth.NewTokenService(jwtSecret, 24*time.Hour)
 
-	adminPasswordHash := getEnv("ADMIN_PASSWORD_HASH", "")
-	if adminPasswordHash == "" {
-		log.Fatal("ADMIN_PASSWORD_HASH environment variable is required")
-	}
-
 	// --- Регистрация репозиториев ---
 	profileRepo := repository.NewProfileRepository(db)
 	articleRepo := repository.NewArticleRepository(db)
+	userRepo := repository.NewUserRepository(db)
 
 	// --- Регистрация сервисов ---
 	profileService := service.NewProfileService(profileRepo)
@@ -69,7 +65,7 @@ func main() {
 
 	// --- Регистрация хендлеров ---
 	profileHandler := handler.NewProfileHandler(profileService)
-	authHandler := handler.NewAuthHandler(tokenService, jwtSecret)
+	authHandler := handler.NewAuthHandler(tokenService, userRepo)
 	articleHandler := handler.NewArticleHandler(articleService)
 
 	r := chi.NewRouter()
@@ -100,7 +96,7 @@ func main() {
 	// Делаем это последним, так как если сделать иначе, то сервер
 	// будет ловить сначала пути из файловой системы (и вернёт 404),
 	// и только потом будет смотреть пути из API (нет, не будет).
-	// ISSUE: При PROD-деплое это возвращает 404 в любом случае, 
+	// ISSUE: При PROD-деплое это возвращает 404 в любом случае,
 	// нужно проверить что не так.
 	static.Mount(r)
 
@@ -175,9 +171,13 @@ func buildRouter(
 		r.Use(custommiddleware.RequireAuth(tokenService))
 
 		r.Put("/whoami", profileHandler.Update)
+
+		//r.Get("/admin/articles", articleHandler.ListForAdmin)
+		//r.Get("/admin/articles/{slug}", articleHandler.GetBySlugForAdmin)
 		r.Post("/articles", articleHandler.Create)
 		r.Put("/articles/{slug}", articleHandler.Update)
 		r.Delete("/articles/{slug}", articleHandler.Delete)
+		r.Post("/articles/{slug}/publish", articleHandler.Publish)
 	})
 
 	return r
