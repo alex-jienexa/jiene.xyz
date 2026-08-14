@@ -14,4 +14,5 @@ var (
 	ErrAlreadyExists = errors.New("resource already exists")
 	ErrInvalidInput  = errors.New("invalid input")
 	ErrUnauthorized  = errors.New("unauthorized")
+	//TODO: Ошибка 403 как для тех, кто авторизовался, но не имеет доступа к контенту.
 )

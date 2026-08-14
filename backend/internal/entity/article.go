@@ -87,7 +87,7 @@ type ArticleFilter struct {
 	Kind        ArticleKind
 	Tag         string
 	ProjectSlug string
-	IsPublished bool
+	IsPublished *bool
 	Page        int
 	Limit       int
 }

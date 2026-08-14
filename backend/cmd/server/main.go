@@ -172,8 +172,8 @@ func buildRouter(
 
 		r.Put("/whoami", profileHandler.Update)
 
-		//r.Get("/admin/articles", articleHandler.ListForAdmin)
-		//r.Get("/admin/articles/{slug}", articleHandler.GetBySlugForAdmin)
+		r.Get("/admin/articles", articleHandler.ListAdmin)
+		r.Get("/admin/articles/{slug}", articleHandler.GetBySlugAdmin)
 		r.Post("/articles", articleHandler.Create)
 		r.Put("/articles/{slug}", articleHandler.Update)
 		r.Delete("/articles/{slug}", articleHandler.Delete)

@@ -39,6 +39,10 @@ func (s *ArticleService) GetBySlug(ctx context.Context, slug string) (*entity.Ar
 	return s.repo.GetBySlug(ctx, slug)
 }
 
+func (s *ArticleService) GetBySlugAdmin(ctx context.Context, slug string) (*entity.Article, error) {
+	return s.repo.GetBySlugAdmin(ctx, slug)
+}
+
 func (s *ArticleService) Create(ctx context.Context, input entity.ArticleCreateInput) (*entity.Article, error) {
 	if err := s.validateCreateInput(input); err != nil {
 		return nil, err

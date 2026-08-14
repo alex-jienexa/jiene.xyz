@@ -18,11 +18,11 @@ func NewArticleRepository(db *sql.DB) ArticleRepository {
 	return &articlePostgresRepository{db: db}
 }
 
-// List строит SQL-запрос динамически в зависимости от того,
-// какие фильтры заданы. См. ArticleFilter для информации о фильтрах
+// ListAdmin выводит статьи согласно фильтру.
+// Отличается от List выводом всех статей, а не только опубликованных.
 func (r *articlePostgresRepository) List(ctx context.Context, filter entity.ArticleFilter) ([]entity.ArticleListItem, int, error) {
 	conditions := []string{"a.is_published = true"}
-	args := []interface{}{}
+	args := []any{}
 	argPos := 1
 
 	if filter.Section != "" {
@@ -38,6 +38,11 @@ func (r *articlePostgresRepository) List(ctx context.Context, filter entity.Arti
 	if filter.ProjectSlug != "" {
 		conditions = append(conditions, fmt.Sprintf("p.slug = $%d", argPos))
 		args = append(args, filter.ProjectSlug)
+		argPos++
+	}
+	if filter.IsPublished != nil {
+		conditions = append(conditions, fmt.Sprintf("a.is_published = $%d", argPos))
+		args = append(args, *filter.IsPublished)
 		argPos++
 	}
 	if filter.Tag != "" {
@@ -125,7 +130,25 @@ func (r *articlePostgresRepository) List(ctx context.Context, filter entity.Arti
 	return items, total, rows.Err()
 }
 
+// GetBySlugAdmin возвращает статью по его slug-идентификатору.
+// Если статья не опубликована, то возвращает entitry.ErrUnauthorized.
 func (r *articlePostgresRepository) GetBySlug(ctx context.Context, slug string) (*entity.Article, error) {
+	// DRY
+	a, err := r.GetBySlugAdmin(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	if a.IsPublished == false {
+		return nil, entity.ErrUnauthorized
+	}
+
+	return a, err
+}
+
+// GetBySlugAdmin возвращает статью по его slug-идентификатору.
+// При этом статья может быть как опубликована, так и нет (то есть её черновик).
+func (r *articlePostgresRepository) GetBySlugAdmin(ctx context.Context, slug string) (*entity.Article, error) {
 	const query = `
 		SELECT a.id, a.slug, a.project_id, a.title, a.section, a.kind,
 		       a.content, a.is_published, a.published_at,
