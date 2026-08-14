@@ -57,3 +57,23 @@ export interface ArticleFilter {
   page?: number;
   limit?: number;
 }
+
+export interface ArticleCreateInput {
+  slug?: string; // если пусто — бэкенд сгенерирует из title
+  project_id?: number | null;
+  title: string;
+  section: ArticleSection;
+  kind: ArticleKind;
+  content: string;
+  tags: string[];
+}
+
+// Все поля опциональны — пришедшее undefined значит "не менять".
+export interface ArticleUpdateInput {
+  title?: string;
+  section?: ArticleSection;
+  kind?: ArticleKind;
+  content?: string;
+  is_published?: boolean;
+  tags?: string[];
+}

@@ -3,6 +3,8 @@ import { createSignal } from "solid-js";
 export interface Session {
     token: string;
     role: string;
+    userId: number;
+    username: string;
 }
 
 const STORAGE_KEY = "grimoire.session";
