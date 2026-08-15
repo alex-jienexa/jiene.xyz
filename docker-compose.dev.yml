@@ -45,7 +45,8 @@ services:
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     command: >
-      sh -c "go install github.com/air-verse/air@latest &&
+      sh -c "go run ./cmd/createuser/ -username \"devuser\" -password \"admin_\" &&
+             go install github.com/air-verse/air@latest &&
              air -c .air.toml"
     depends_on:
       migrate:
