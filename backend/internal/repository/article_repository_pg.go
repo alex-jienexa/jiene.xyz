@@ -21,7 +21,9 @@ func NewArticleRepository(db *sql.DB) ArticleRepository {
 // ListAdmin выводит статьи согласно фильтру.
 // Отличается от List выводом всех статей, а не только опубликованных.
 func (r *articlePostgresRepository) List(ctx context.Context, filter entity.ArticleFilter) ([]entity.ArticleListItem, int, error) {
-	conditions := []string{"a.is_published = true"}
+	// Если не будет никаких условий, то в запросе будет тупо `WHERE `.
+	// "1 = 1" будет некоторой заглушкой, чтобы при поиске всех статей не было ошибок.
+	conditions := []string{"1 = 1"}
 	args := []any{}
 	argPos := 1
 
@@ -92,6 +94,8 @@ func (r *articlePostgresRepository) List(ctx context.Context, filter entity.Arti
 	`, whereClause, argPos, argPos+1)
 
 	args = append(args, limit, offset)
+
+	fmt.Print(listQuery)
 
 	rows, err := r.db.QueryContext(ctx, listQuery, args...)
 	if err != nil {
@@ -344,7 +348,7 @@ func (r *articlePostgresRepository) Publish(ctx context.Context, slug string) er
 		WHERE slug = $1 AND is_published = false
 		` // Проверка на публикацию, чтобы не публиковать уже опубликованный пост
 
-	result, err := r.db.ExecContext(ctx, publishQuery)
+	result, err := r.db.ExecContext(ctx, publishQuery, slug)
 	if err != nil {
 		return err
 	}

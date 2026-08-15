@@ -10,6 +10,7 @@ import type { CommandResult, CommandContext } from "./types";
 import "./commands/core";
 import "./commands/dice";
 import "./commands/easter-eggs";
+import "./commands/auth";
 
 export type { TermLine, CommandResult, TerminalCommand, AwaitInput } from "./types";
 

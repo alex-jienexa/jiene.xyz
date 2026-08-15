@@ -12,6 +12,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -62,7 +63,12 @@ func main() {
 		PasswordHash: string(hash),
 		Role:         entity.UserRole(*role),
 	})
-	if err != nil {
+	if errors.Is(err, entity.ErrAlreadyExists) {
+		log.Println("[!] user you have created already exists! getting it from db...")
+		if user, err = userRepo.GetByUsername(context.Background(), *username); err != nil {
+			log.Fatalf("[x] failed to find user: %v", err)
+		}
+	} else if err != nil {
 		log.Fatalf("[x] failed to create user: %v", err)
 	}
 

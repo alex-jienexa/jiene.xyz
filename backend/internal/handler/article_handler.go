@@ -117,9 +117,9 @@ func (h *ArticleHandler) ListAdmin(w http.ResponseWriter, r *http.Request) {
 		Kind:        entity.ArticleKind(q.Get("kind")),
 		Tag:         q.Get("tag"),
 		ProjectSlug: q.Get("project"),
-		IsPublished: parseBooleanOrNull(q.Get("is_published")),
-		Page:        parseIntOrDefault(q.Get("page"), 1),
-		Limit:       parseIntOrDefault(q.Get("limit"), 10),
+		// IsPublished: parseBooleanOrNull("null"),
+		Page:  parseIntOrDefault(q.Get("page"), 1),
+		Limit: parseIntOrDefault(q.Get("limit"), 10),
 	}
 
 	items, total, err := h.service.List(r.Context(), filter)

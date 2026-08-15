@@ -44,10 +44,14 @@ services:
       ENV: "DEV"
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
+    # command: >
+    #   sh -c "go run ./cmd/createuser/ -username \"devuser\" -password \"admin_\" &&
+    #          go install github.com/air-verse/air@latest &&
+    #          air -c .air.toml"
     command: >
-      sh -c "go run ./cmd/createuser/ -username \"devuser\" -password \"admin_\" &&
-             go install github.com/air-verse/air@latest &&
-             air -c .air.toml"
+        sh -c "go run ./cmd/createuser/ -username \"devuser\" -password \"admin_\" &&
+               go build -tags dev -o ./tmp/server ./cmd/server/ &&
+               ./tmp/server"       
     depends_on:
       migrate:
         condition: service_completed_successfully
