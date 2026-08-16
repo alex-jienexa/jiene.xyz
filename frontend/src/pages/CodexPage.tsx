@@ -27,29 +27,36 @@ const CodexPage: Component = () => {
 
       <Divider />
 
+      // ISSUE: API проектов на бекенде не было реализовано, так что дальше
+      // первого Show код не уйдёт. Нужно это исправить.
       <Show when={projects()} fallback={<div class={s.skeleton} />}>
         {(list) => (
-          <div class={s.list}>
-            <For each={list()}>
-              {(project, i) => (
-                <A
-                  href={`/codex/${project.slug}`}
-                  class={`${s.card} animate-fade-up`}
-                  style={`animation-delay: ${i() * 60}ms`}
-                >
-                  <div class={s.cardHead}>
-                    <div>
-                      <p class={s.cardChapter}>§ chapter {toRoman(i() + 1)}</p>
-                      <h2 class={s.cardTitle}>{project.title}</h2>
+          <Show
+            when={list().length > 0}
+            fallback={<p class={s.empty}>Проектов пока нет...</p>}
+          >
+            <div class={s.list}>
+              <For each={list()}>
+                {(project, i) => (
+                  <A
+                    href={`/codex/${project.slug}`}
+                    class={`${s.card} animate-fade-up`}
+                    style={`animation-delay: ${i() * 60}ms`}
+                  >
+                    <div class={s.cardHead}>
+                      <div>
+                        <p class={s.cardChapter}>§ chapter {toRoman(i() + 1)}</p>
+                        <h2 class={s.cardTitle}>{project.title}</h2>
+                      </div>
+                      <Badge value={project.status} />
                     </div>
-                    <Badge value={project.status} />
-                  </div>
-                  <p class={s.cardDesc}>{project.description}</p>
-                  <span class={s.cardLink}>Открыть кодекс →</span>
-                </A>
-              )}
-            </For>
-          </div>
+                    <p class={s.cardDesc}>{project.description}</p>
+                    <span class={s.cardLink}>Открыть кодекс →</span>
+                  </A>
+                )}
+              </For>
+            </div>
+          </Show>
         )}
       </Show>
     </div>

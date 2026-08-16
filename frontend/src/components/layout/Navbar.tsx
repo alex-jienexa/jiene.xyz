@@ -43,20 +43,23 @@ const Navbar: Component = () => {
         </ul>
       </nav>
 
-      <button
-        class={s.terminal}
-        onClick={openTerminal}
-        aria-label="Открыть терминал (⌘K)"
-        title="⌘K"
-      >
-        ~ terminal
-      </button>
+      <nav aria-label="Кнопки терминала" class={s.terminal}>
+        {/* BUG: Если не обернуть блоки в отдельный блок, то они сломают flex-структуру навигации. */}
+          <button
+            class={s.terminal}
+            onClick={openTerminal}
+            aria-label="Открыть терминал (⌘K)"
+            title="⌘K"
+          >
+            ~ terminal
+          </button>
 
-      <Show when={isAdmin()}>
-        <A href="/admin" class={s.terminal} aria-label="Открыть админку">
-          ~ admin
-        </A>
-      </Show>
+          <Show when={isAdmin()}>
+            <A href="/admin" class={s.terminal} aria-label="Открыть админку">
+              ~ admin
+            </A>
+          </Show>
+      </nav>
     </header>
   );
 };

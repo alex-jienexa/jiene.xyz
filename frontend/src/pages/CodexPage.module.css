@@ -30,6 +30,12 @@
 /* ── Project list ── */
 .list { display: flex; flex-direction: column; gap: 12px; }
 
+.empty {
+  padding: 48px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
 /* ── Project card ──
    Accent bar via shadow layer — no border-left (prevents radius conflict).
    Right-only radius since left edge is flat against the accent bar.
@@ -99,6 +105,11 @@
 .card:hover .cardLink { color: var(--purple-600); }
 
 /* ── Skeleton ── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .skeleton {
   background: linear-gradient(90deg, var(--surface) 25%, var(--white) 50%, var(--surface) 75%);
   background-size: 200% 100%;
