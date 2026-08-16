@@ -17,7 +17,7 @@ import { setSession, clearSession, getSession } from "../../../auth/auth.store";
  */
 registerCommand({
   match: "login",
-  help: "login           — войти как автор гримуара",
+  help: "login        войти как автор гримуара",
   run(): CommandResult {
     if (getSession()) {
       return { lines: [{ type: "dim", text: "Ты уже вошёл. Введи 'logout', чтобы сменить личность." }] };
@@ -60,6 +60,19 @@ registerCommand({
         },
       },
     };
+  },
+});
+
+registerCommand({
+  match: "admin",
+  help: "admin        перейти в админку (если был выполнен вход)",
+  run(): CommandResult {
+    if (!getSession()) {
+      return {
+        lines: [{ type: "warning", text: "Вход не выполнен, совершите `login`" }],
+      };
+    }
+    return { lines: [{ type: "success", text: "✦ Открываю святилище..." }], navigate: "/admin" };
   },
 });
 
