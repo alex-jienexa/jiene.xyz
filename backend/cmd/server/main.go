@@ -58,21 +58,24 @@ func main() {
 	profileRepo := repository.NewProfileRepository(db)
 	articleRepo := repository.NewArticleRepository(db)
 	userRepo := repository.NewUserRepository(db)
+	projectRepo := repository.NewProjectRepository(db)
 
 	// --- Регистрация сервисов ---
 	profileService := service.NewProfileService(profileRepo)
 	articleService := service.NewArticleService(articleRepo)
+	projectService := service.NewProjectService(projectRepo)
 
 	// --- Регистрация хендлеров ---
 	profileHandler := handler.NewProfileHandler(profileService)
 	authHandler := handler.NewAuthHandler(tokenService, userRepo)
 	articleHandler := handler.NewArticleHandler(articleService)
+	projectHandler := handler.NewProjectHandler(projectService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	apiRouter := buildRouter(profileHandler, authHandler, articleHandler, tokenService)
+	apiRouter := buildRouter(profileHandler, authHandler, articleHandler, projectHandler, tokenService)
 	r.Mount("/api/", apiRouter)
 
 	// --- Подключение документации ---
@@ -143,6 +146,7 @@ func buildRouter(
 	profileHandler *handler.ProfileHandler,
 	authHandler *handler.AuthHandler,
 	articleHandler *handler.ArticleHandler,
+	projectHandler *handler.ProjectHandler,
 	tokenService *auth.TokenService,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -165,6 +169,8 @@ func buildRouter(
 	r.Get("/whoami", profileHandler.Get)
 	r.Get("/articles", articleHandler.List)
 	r.Get("/articles/{slug}", articleHandler.GetBySlug)
+	r.Get("/projects", projectHandler.List)
+	r.Get("/projects/{slug}", projectHandler.GetBySlug)
 
 	r.Group(func(r chi.Router) {
 		// Для данной группы эндпоинтов нужна аутентификация
@@ -178,6 +184,11 @@ func buildRouter(
 		r.Put("/articles/{slug}", articleHandler.Update)
 		r.Delete("/articles/{slug}", articleHandler.Delete)
 		r.Post("/articles/{slug}/publish", articleHandler.Publish)
+
+		r.Post("/projects", projectHandler.Create)
+		r.Put("/projects/{slug}", projectHandler.Update)
+		r.Delete("/projects/{slug}", projectHandler.Delete)
+
 	})
 
 	return r

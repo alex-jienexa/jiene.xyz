@@ -25,6 +25,7 @@ type Project struct {
 }
 
 // ProjectCreateInput — данные для создания нового проекта.
+// Slug необязателен — если не указан, сервис сгенерирует его из Title
 type ProjectCreateInput struct {
 	Slug        string        `json:"slug"`
 	Title       string        `json:"title"`
@@ -33,8 +34,9 @@ type ProjectCreateInput struct {
 }
 
 // ProjectUpdateInput — данные для обновления проекта.
+// Pointer-поля означают "опционально": если nil — не обновлять.
 type ProjectUpdateInput struct {
-	Title       string        `json:"title"`
-	Description string        `json:"description"`
-	Status      ProjectStatus `json:"status"`
+	Title       *string        `json:"title"`
+	Description *string        `json:"description"`
+	Status      *ProjectStatus `json:"status"`
 }
