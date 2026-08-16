@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show } from "solid-js";
+import { createSignal, createResource, For, Show, createMemo } from "solid-js";
 import {
   getAllArticlesForAdmin,
   getArticleForAdmin,
@@ -9,12 +9,17 @@ import {
 } from "../api";
 import type { ArticleListItem, ArticleSection, ArticleKind } from "../types";
 import { getSession, clearSession } from "../auth/auth.store";
+import { markdownToHtml } from "../lib/markdown";
 import Badge from "../components/ui/Badge";
 import Divider from "../components/ui/Divider";
+import articleStyles from "./ArticlePage.module.css";
 import s from "./AdminPage.module.css";
 
 const SECTIONS: ArticleSection[] = ["chronicle", "codex", "lab"];
 const KINDS: ArticleKind[] = ["article", "devlog", "research", "note", "essay"];
+
+type StatusFilter = "all" | "published" | "draft";
+type SectionFilter = ArticleSection | "all";
 
 interface FormState {
   title: string;
@@ -22,6 +27,7 @@ interface FormState {
   kind: ArticleKind;
   content: string;
   tagsInput: string; // сырой ввод через запятую — парсится в tags при отправке
+  isPublished: boolean;
 }
 
 const emptyForm: FormState = {
@@ -30,6 +36,7 @@ const emptyForm: FormState = {
   kind: "article",
   content: "",
   tagsInput: "",
+  isPublished: false,
 };
 
 /**
@@ -46,6 +53,27 @@ export default function AdminPage() {
   const [form, setForm] = createSignal<FormState>(emptyForm);
   const [saving, setSaving] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
+  const [tab, setTab] = createSignal<"edit" | "preview">("edit");
+
+  // --- Фильтры списка ---
+  // Клиентские, не походы на бэкенд: список статей у одного автора
+  // никогда не будет настолько большим, чтобы это стало проблемой,
+  // а простота важнее здесь больше, чем экономия одного fetch.
+  const [filterSection, setFilterSection] = createSignal<SectionFilter>("all");
+  const [filterStatus, setFilterStatus] = createSignal<StatusFilter>("all");
+  const [filterQuery, setFilterQuery] = createSignal("");
+
+  const filteredArticles = createMemo(() => {
+    const list = articles() ?? [];
+    const q = filterQuery().trim().toLowerCase();
+    return list.filter((a) => {
+      if (filterSection() !== "all" && a.section !== filterSection()) return false;
+      if (filterStatus() === "published" && !a.is_published) return false;
+      if (filterStatus() === "draft" && a.is_published) return false;
+      if (q && !a.title.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  });
 
   async function selectArticle(item: ArticleListItem | null) {
     setError(null);
@@ -63,6 +91,7 @@ export default function AdminPage() {
         kind: full.kind,
         content: full.content,
         tagsInput: full.tags.join(", "),
+        isPublished: full.is_published,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось загрузить статью");
@@ -116,9 +145,26 @@ export default function AdminPage() {
     setError(null);
     try {
       await publishArticle(slug);
+      setForm({ ...form(), isPublished: true });
       await refetch();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось опубликовать статью");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUnpublish() {
+    const slug = selectedSlug();
+    if (!slug) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await updateArticle(slug, { is_published: false });
+      setForm({ ...form(), isPublished: false });
+      await refetch();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось снять статью с публикации");
     } finally {
       setSaving(false);
     }
@@ -142,6 +188,11 @@ export default function AdminPage() {
     }
   }
 
+  function saveButtonLabel(): string {
+    if (!selectedSlug()) return "Создать черновик";
+    return form().isPublished ? "Сохранить изменения" : "Сохранить черновик";
+  }
+
   return (
     <div class={s.page}>
       <header class={s.header}>
@@ -162,32 +213,72 @@ export default function AdminPage() {
           <button class={s.listItem} onClick={() => selectArticle(null)}>
             + новая статья
           </button>
-          <For each={articles()}>
-            {(item) => (
-              <button
-                class={`${s.listItem} ${selectedSlug() === item.slug ? s.listItemActive : ""}`}
-                onClick={() => selectArticle(item)}
+
+          <div class={s.filters}>
+            <input
+              class={s.filterInput}
+              placeholder="поиск по заголовку..."
+              value={filterQuery()}
+              onInput={(e) => setFilterQuery(e.currentTarget.value)}
+            />
+            <div class={s.filterRow}>
+              <select
+                class={s.filterSelect}
+                value={filterSection()}
+                onChange={(e) => setFilterSection(e.currentTarget.value as SectionFilter)}
               >
-                {item.title || "(без названия)"}
-                <div class={s.listMeta}>
-                  <Badge value={item.is_published ? "completed" : "in_progress"} />
-                  <Badge value={item.section} />
-                </div>
-              </button>
-            )}
-          </For>
+                <option value="all">все разделы</option>
+                <For each={SECTIONS}>{(sec) => <option value={sec}>{sec}</option>}</For>
+              </select>
+              <select
+                class={s.filterSelect}
+                value={filterStatus()}
+                onChange={(e) => setFilterStatus(e.currentTarget.value as StatusFilter)}
+              >
+                <option value="all">все статусы</option>
+                <option value="published">опубликовано</option>
+                <option value="draft">черновики</option>
+              </select>
+            </div>
+          </div>
+
+          <Show when={articles()} fallback={<p class={s.listEmpty}>Загрузка...</p>}>
+            <Show
+              when={filteredArticles().length > 0}
+              fallback={<p class={s.listEmpty}>Ничего не найдено по этим фильтрам.</p>}
+            >
+              <For each={filteredArticles()}>
+                {(item) => (
+                  <button
+                    class={`${s.listItem} ${selectedSlug() === item.slug ? s.listItemActive : ""}`}
+                    onClick={() => selectArticle(item)}
+                  >
+                    {item.title || "(без названия)"}
+                    <div class={s.listMeta}>
+                      <Badge value={item.is_published ? "completed" : "in_progress"} />
+                      <Badge value={item.section} />
+                    </div>
+                  </button>
+                )}
+              </For>
+            </Show>
+          </Show>
         </div>
 
         <div class={s.form}>
-          <div>
+
+          <div class={s.formHeader}>
             <label class={s.label}>Заголовок</label>
-            <input
-              class={s.input}
-              value={form().title}
-              onInput={(e) => setForm({ ...form(), title: e.currentTarget.value })}
-              placeholder="Builder of systems..."
-            />
+            <Show when={selectedSlug()}>
+              <Badge value={form().isPublished ? "completed" : "in_progress"} />
+            </Show>
           </div>
+          <input
+            class={s.input}
+            value={form().title}
+            onInput={(e) => setForm({ ...form(), title: e.currentTarget.value })}
+            placeholder="Builder of systems..."
+          />
 
           <div class={s.row}>
             <div>
@@ -223,12 +314,41 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <label class={s.label}>Содержимое (Markdown)</label>
-            <textarea
-              class={s.textarea}
-              value={form().content}
-              onInput={(e) => setForm({ ...form(), content: e.currentTarget.value })}
-            />
+            <div class={s.contentHeader}>
+                <label class={s.label}>Содержимое (Markdown)</label>
+                <div class={s.tabs}>
+                  <button
+                    type="button"
+                    class={`${s.tabBtn} ${tab() === "edit" ? s.tabBtnActive : ""}`}
+                    onClick={() => setTab("edit")}
+                  >
+                    Редактировать
+                  </button>
+                  <button
+                    type="button"
+                    class={`${s.tabBtn} ${tab() === "preview" ? s.tabBtnActive : ""}`}
+                    onClick={() => setTab("preview")}
+                  >
+                    Предпросмотр
+                  </button>
+                </div>
+            </div>
+
+            <Show
+              when={tab() === "edit"}
+              fallback={
+                <div
+                  class={`${s.previewBox} ${articleStyles.body}`}
+                  innerHTML={markdownToHtml(form().content) || "<p style=\"opacity:.5\">Пока пусто.</p>"}
+                />
+              }
+            >
+              <textarea
+                class={s.textarea}
+                value={form().content}
+                onInput={(e) => setForm({ ...form(), content: e.currentTarget.value })}
+              />
+            </Show>
           </div>
 
           <Show when={error()}>
@@ -242,11 +362,16 @@ export default function AdminPage() {
               </button>
             </Show>
             <button class={s.btn} disabled={saving()} onClick={handleSave}>
-              Сохранить черновик
+              {saveButtonLabel()}
             </button>
-            <Show when={selectedSlug()}>
-              <button class={s.btnPrimary} disabled={saving()} onClick={handlePublish}>
+            <Show when={selectedSlug() && !form().isPublished}>
+              <button class={`${s.btn} ${s.btnPrimary}`} disabled={saving()} onClick={handlePublish}>
                 Опубликовать
+              </button>
+            </Show>
+            <Show when={selectedSlug() && form().isPublished}>
+              <button class={s.btn} disabled={saving()} onClick={handleUnpublish}>
+                Снять с публикации
               </button>
             </Show>
           </div>
