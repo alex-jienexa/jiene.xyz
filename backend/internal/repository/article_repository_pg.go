@@ -95,8 +95,6 @@ func (r *articlePostgresRepository) List(ctx context.Context, filter entity.Arti
 
 	args = append(args, limit, offset)
 
-	fmt.Print(listQuery)
-
 	rows, err := r.db.QueryContext(ctx, listQuery, args...)
 	if err != nil {
 		return nil, 0, err

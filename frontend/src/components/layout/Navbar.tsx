@@ -43,13 +43,16 @@ const Navbar: Component = () => {
         </ul>
       </nav>
 
-      <nav aria-label="Кнопки терминала" class={s.terminal}>
+      <nav aria-label="Кнопки терминала">
         {/* BUG: Если не обернуть блоки в отдельный блок, то они сломают flex-структуру навигации. */}
           <button
             class={s.terminal}
             onClick={openTerminal}
             aria-label="Открыть терминал (⌘K)"
             title="⌘K"
+            style={{
+              "margin-right": "1rem"
+            }}
           >
             ~ terminal
           </button>

@@ -27,8 +27,9 @@ const CodexPage: Component = () => {
 
       <Divider />
 
-      // ISSUE: API проектов на бекенде не было реализовано, так что дальше
-      // первого Show код не уйдёт. Нужно это исправить.
+      {/* \
+       ISSUE: API проектов на бекенде не было реализовано, так что дальше
+       первого Show код не уйдёт. Нужно это исправить. */ }
       <Show when={projects()} fallback={<div class={s.skeleton} />}>
         {(list) => (
           <Show
