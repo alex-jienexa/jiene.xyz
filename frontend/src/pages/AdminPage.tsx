@@ -2,6 +2,7 @@ import { createSignal, Show } from "solid-js";
 import { getSession, clearSession } from "../auth/auth.store";
 import Divider from "../components/ui/Divider";
 import AdminArticlesPage from "./admin/AdminPageArticle";
+import AdminProjectsPage from "./admin/AdminProjectsArticle";
 import s from "./AdminPage.module.css";
 
 type Tab = "articles" | "projects"; 
@@ -49,6 +50,9 @@ export default function AdminPage() {
       {/* Подключаем содержательную логику админки */}
       <Show when={tab() === "articles"}>
         <AdminArticlesPage />
+      </Show>
+      <Show when={tab() === "projects"}>
+        <AdminProjectsPage />
       </Show>
     </div>
   );
