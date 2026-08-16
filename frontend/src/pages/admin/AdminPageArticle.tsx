@@ -1,4 +1,4 @@
-import { createSignal, createResource, For, Show, createMemo } from "solid-js";
+import { createSignal, createResource, For, Show, createMemo, createEffect, onMount, onCleanup } from "solid-js";
 import {
   getAllArticlesForAdmin,
   getArticleForAdmin,
@@ -18,6 +18,14 @@ const KINDS: ArticleKind[] = ["article", "devlog", "research", "note", "essay"];
 
 type StatusFilter = "all" | "published" | "draft";
 type SectionFilter = ArticleSection | "all";
+
+// Автосохранение ждёт этот интервал бездействия после последней
+// клавиши, прежде чем сохранить.
+const AUTOSAVE_DEBOUNCE_MS = 2500;
+// Определённый жёсткий интервал, после которого будет выполняться
+// автосохранение.
+const AUTOSAVE_INTERVAL_MS = 20000;
+
 
 interface FormState {
   title: string;
@@ -65,43 +73,42 @@ export default function AdminArticlesPage() {
     });
   });
 
-  async function selectArticle(item: ArticleListItem | null) {
-    setError(null);
-    if (!item) {
-      setSelectedSlug(null);
-      setForm(emptyForm);
-      return;
-    }
-    try {
-      const full = await getArticleForAdmin(item.slug);
-      setSelectedSlug(full.slug);
-      setForm({
-        title: full.title,
-        section: full.section,
-        kind: full.kind,
-        content: full.content,
-        tagsInput: full.tags.join(", "),
-        isPublished: full.is_published,
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить статью");
-    }
+  // --- Автосохранение ---
+  // `isDirty` имеются изменения, которые не были отправлены на сервер
+  const [isDirty, setIsDirty] = createSignal(false);
+  const [lastSavedAt, setLastSavedAt] = createSignal<Date | null>(null);
+  // Время с последнего сохранения. 
+  let debounceTimer: number | undefined;
+
+  function saveStatusText(): string {
+    // BUG: При смене статей между собой текст остаётся "Сохранено в ХХ:УУ". По-хорошему это надо бы приукрасить, но можно и оставить.
+    if (saving()) return "сохраняю...";
+    if (isDirty()) return "есть несохранённые изменения";
+    const t = lastSavedAt();
+    if (t) return `сохранено в ${t.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+    return "";
   }
 
-  function parsedTags(): string[] {
-    return form()
-      .tagsInput.split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+  // Любое изменение формы автоматически помечает форму "грязной".
+  function updateForm(patch: Partial<FormState>) {
+    setForm({ ...form(), ...patch });
+    setIsDirty(true);
   }
 
-  async function handleSave() {
+  /**
+   * save отправляет данные о форме на сервер, тем самым сохраняя его.
+   */
+  async function save(): Promise<void> {
+    const f = form();
+    if (!f.title.trim()) return; // без заголовка бэкенд откажет — не дёргаем API впустую
+    if (saving()) return; // не даём двум сохранениям одной статьи наложиться друг на друга
+ 
+    if (debounceTimer) { window.clearTimeout(debounceTimer); debounceTimer = undefined; }
+ 
     setSaving(true);
     setError(null);
     try {
-      const f = form();
       const slug = selectedSlug();
-
       if (slug) {
         await updateArticle(slug, {
           title: f.title,
@@ -120,12 +127,87 @@ export default function AdminArticlesPage() {
         });
         setSelectedSlug(created.slug);
       }
+      setIsDirty(false);
+      setLastSavedAt(new Date());
       await refetch();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось сохранить статью");
     } finally {
       setSaving(false);
     }
+  }
+
+  // Запускаем debounce таймер после того, как происходят изменения в форме.
+  // Изменения будут идти когда перестанут печатать в нём.
+  createEffect(() => {
+    form();
+    if (!isDirty()) return;
+    if (debounceTimer) window.clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(() => { void save(); }, AUTOSAVE_DEBOUNCE_MS);
+  });
+
+  onMount(() => {
+    // Задаём жёсткий интервал.
+    // Изменения будут происходить определённый промежуток времени.
+    const intervalId = window.setInterval(() => {
+      if (isDirty()) void save();
+    }, AUTOSAVE_INTERVAL_MS);
+
+    // Делаем автосохранение перед сменой страницы
+    const onVisibilityChange = () => {
+      if (document.hidden && isDirty()) void save();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // Дополнительный вариант - BeforeUnload
+    const onBeforeUnload = () => {
+      if (isDirty()) void save();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+
+    // Убираем ненужные события после выгрузки страницы.
+    onCleanup(() => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+    });
+  })
+
+
+  async function selectArticle(item: ArticleListItem | null) {
+    if (isDirty()) await save();
+
+    setError(null);
+    if (!item) {
+      setSelectedSlug(null);
+      setForm(emptyForm);
+      setIsDirty(false);
+      return;
+    }
+    try {
+      const full = await getArticleForAdmin(item.slug);
+      setSelectedSlug(full.slug);
+      setForm({
+        title: full.title,
+        section: full.section,
+        kind: full.kind,
+        content: full.content,
+        tagsInput: full.tags.join(", "),
+        isPublished: full.is_published,
+      });
+      // Так как идёт смена формы, изменится и isDirty, но тут это не необходимо
+      setIsDirty(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось загрузить статью");
+    }
+  }
+
+  function parsedTags(): string[] {
+    return form()
+      .tagsInput.split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
   }
 
   async function handlePublish() {
@@ -183,13 +265,13 @@ export default function AdminArticlesPage() {
     return form().isPublished ? "Сохранить изменения" : "Сохранить черновик";
   }
 
-  return (
+    return (
     <div class={s.layout}>
       <div class={s.list}>
         <button class={s.listItem} onClick={() => selectArticle(null)}>
           + новая статья
         </button>
-
+ 
         <div class={s.filters}>
           <input
             class={s.filterInput}
@@ -217,7 +299,7 @@ export default function AdminArticlesPage() {
             </select>
           </div>
         </div>
-
+ 
         <Show when={articles()} fallback={<p class={s.listEmpty}>Загрузка...</p>}>
           <Show
             when={filteredArticles().length > 0}
@@ -240,9 +322,8 @@ export default function AdminArticlesPage() {
           </Show>
         </Show>
       </div>
-
+ 
       <div class={s.form}>
-
         <div class={s.formHeader}>
           <label class={s.label}>Заголовок</label>
           <Show when={selectedSlug()}>
@@ -252,17 +333,17 @@ export default function AdminArticlesPage() {
         <input
           class={s.input}
           value={form().title}
-          onInput={(e) => setForm({ ...form(), title: e.currentTarget.value })}
+          onInput={(e) => updateForm({ title: e.currentTarget.value })}
           placeholder="Builder of systems..."
         />
-
+ 
         <div class={s.row}>
           <div>
             <label class={s.label}>Раздел</label>
             <select
               class={s.select}
               value={form().section}
-              onChange={(e) => setForm({ ...form(), section: e.currentTarget.value as ArticleSection })}
+              onChange={(e) => updateForm({ section: e.currentTarget.value as ArticleSection })}
             >
               <For each={SECTIONS}>{(sec) => <option value={sec}>{sec}</option>}</For>
             </select>
@@ -272,44 +353,44 @@ export default function AdminArticlesPage() {
             <select
               class={s.select}
               value={form().kind}
-              onChange={(e) => setForm({ ...form(), kind: e.currentTarget.value as ArticleKind })}
+              onChange={(e) => updateForm({ kind: e.currentTarget.value as ArticleKind })}
             >
               <For each={KINDS}>{(k) => <option value={k}>{k}</option>}</For>
             </select>
           </div>
         </div>
-
+ 
         <div>
           <label class={s.label}>Теги (через запятую)</label>
           <input
             class={s.input}
             value={form().tagsInput}
-            onInput={(e) => setForm({ ...form(), tagsInput: e.currentTarget.value })}
+            onInput={(e) => updateForm({ tagsInput: e.currentTarget.value })}
             placeholder="pf2e, ml, golang"
           />
         </div>
-
+ 
         <div>
           <div class={s.contentHeader}>
-              <label class={s.label}>Содержимое (Markdown)</label>
-              <div class={s.tabs}>
-                <button
-                  type="button"
-                  class={`${s.tabBtn} ${tab() === "edit" ? s.tabBtnActive : ""}`}
-                  onClick={() => setTab("edit")}
-                >
-                  Редактировать
-                </button>
-                <button
-                  type="button"
-                  class={`${s.tabBtn} ${tab() === "preview" ? s.tabBtnActive : ""}`}
-                  onClick={() => setTab("preview")}
-                >
-                  Предпросмотр
-                </button>
-              </div>
+            <label class={s.label}>Содержимое (Markdown)</label>
+            <div class={s.tabs}>
+              <button
+                type="button"
+                class={`${s.tabBtn} ${tab() === "edit" ? s.tabBtnActive : ""}`}
+                onClick={() => setTab("edit")}
+              >
+                Редактировать
+              </button>
+              <button
+                type="button"
+                class={`${s.tabBtn} ${tab() === "preview" ? s.tabBtnActive : ""}`}
+                onClick={() => setTab("preview")}
+              >
+                Предпросмотр
+              </button>
+            </div>
           </div>
-
+ 
           <Show
             when={tab() === "edit"}
             fallback={
@@ -322,22 +403,23 @@ export default function AdminArticlesPage() {
             <textarea
               class={s.textarea}
               value={form().content}
-              onInput={(e) => setForm({ ...form(), content: e.currentTarget.value })}
+              onInput={(e) => updateForm({ content: e.currentTarget.value })}
             />
           </Show>
         </div>
-
+ 
         <Show when={error()}>
           <p class={s.error}>{error()}</p>
         </Show>
-
+ 
         <div class={s.actions}>
+          <p class={s.saveStatus}>{saveStatusText()}</p>
           <Show when={selectedSlug()}>
             <button class={`${s.btn} ${s.btnDanger}`} disabled={saving()} onClick={handleDelete}>
               Удалить
             </button>
           </Show>
-          <button class={s.btn} disabled={saving()} onClick={handleSave}>
+          <button class={s.btn} disabled={saving()} onClick={() => void save()}>
             {saveButtonLabel()}
           </button>
           <Show when={selectedSlug() && !form().isPublished}>

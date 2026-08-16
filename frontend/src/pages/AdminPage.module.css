@@ -223,6 +223,14 @@
   flex-wrap: wrap;
 }
 
+.saveStatus {
+  font: 400 11px var(--font-mono);
+  color: var(--text-tertiary);
+  margin-right: auto;
+  white-space: nowrap;
+}
+
+
 .btn {
   font: 500 13px var(--font-sans);
   padding: 8px 16px;

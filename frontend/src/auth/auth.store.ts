@@ -38,4 +38,6 @@ export function clearSession() {
     setSessionSignal(null);
 }
 
+// ISSUE: Если сессия заканчвивается (истекает токен), то фронтенд никак его не обновляет автоматически.
+
 export { session as sessionSignal };
