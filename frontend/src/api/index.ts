@@ -5,6 +5,7 @@ import type {
 	Article,
 	ArticlesResponse,
 	Project,
+	ProjectStatus,
 	ArticleFilter,
 	ArticleCreateInput,
 	ArticleUpdateInput,
@@ -40,11 +41,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 	});
 
 	if (!res.ok) {
-    const payload = await res.json().catch(() => null);
-    throw new Error(payload?.error ?? `API error: ${res.status} | ${path}`);
-  }
+		const payload = await res.json().catch(() => null);
+		throw new Error(payload?.error ?? `API error: ${res.status} | ${path}`);
+	}
 	if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  	return res.json() as Promise<T>;
 }
 
 // === Auth ===
@@ -133,7 +134,35 @@ export async function getProject(slug: string): Promise<Project> {
 	return request<Project>(`/projects/${slug}`);
 }
 
+// === Projects: admin (требуют авторизации) ===
+
+export interface ProjectCreateInput {
+	slug?: string; // если пусто — бэкенд сгенерирует из title
+	title: string;
+	description: string;
+	status: ProjectStatus;
+}
+
+// Все поля опциональны — undefined значит "не менять"
+export interface ProjectUpdateInput {
+	title?: string;
+	description?: string;
+	status?: ProjectStatus;
+}
+
+export async function createProject(input: ProjectCreateInput): Promise<Project> {
+	return request<Project>("/projects", { method: "POST", body: input, auth: true });
+}
+ 
+export async function updateProject(slug: string, input: ProjectUpdateInput): Promise<Project> {
+  	return request<Project>(`/projects/${slug}`, { method: "PUT", body: input, auth: true });
+}
+ 
+export async function deleteProject(slug: string): Promise<void> {
+	return request<void>(`/projects/${slug}`, { method: "DELETE", auth: true });
+}
+ 
 export async function getProjectArticles(slug: string): Promise<ArticleListItem[]> {
-	const res = await request<ArticlesResponse>(`/projects/${slug}/articles`);
+	const res = await getArticles({ project: slug, limit: 50 });
 	return res.data;
 }
