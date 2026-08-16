@@ -37,12 +37,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Пароль хешируется
-	hash, err := bcrypt.GenerateFromPassword([]byte(*password), 12)
-	if err != nil {
-		log.Fatalf("[x] failed to hash password: %v", err)
-	}
-
 	// Подключаемся к БД, чтобы добавить нового пользователя
 	db, err := database.Connect(database.Config{
 		Host:     getEnv("DB_HOST", "localhost"),
@@ -58,21 +52,33 @@ func main() {
 	defer db.Close()
 
 	userRepo := repository.NewUserRepository(db)
+
+	// Получаем пользователя. Если он получен, значит пользователь существует.
+	existing, err := userRepo.GetByUsername(context.Background(), *username)
+	if err == nil {
+		log.Printf("[!] user %q already exists (id=%d, role=%s) - skipping creation", existing.Username, existing.ID, existing.Role)
+		return
+	}
+	if !errors.Is(err, entity.ErrNotFound) {
+		log.Fatalf("[x] failed to check existing user: %v", err)
+	}
+
+	// Пароль хешируется
+	hash, err := bcrypt.GenerateFromPassword([]byte(*password), 12)
+	if err != nil {
+		log.Fatalf("[x] failed to hash password: %v", err)
+	}
+
 	user, err := userRepo.Create(context.Background(), entity.UserCreateInput{
 		Username:     *username,
 		PasswordHash: string(hash),
 		Role:         entity.UserRole(*role),
 	})
-	if errors.Is(err, entity.ErrAlreadyExists) {
-		log.Println("[!] user you have created already exists! getting it from db...")
-		if user, err = userRepo.GetByUsername(context.Background(), *username); err != nil {
-			log.Fatalf("[x] failed to find user: %v", err)
-		}
-	} else if err != nil {
+	if err != nil {
 		log.Fatalf("[x] failed to create user: %v", err)
 	}
 
-	fmt.Printf("[+] user created: id=%d username=%s role=%s\n", user.ID, user.Username, user.Role)
+	log.Printf("[+] user created: id=%d username=%s role=%s\n", user.ID, user.Username, user.Role)
 
 }
 
