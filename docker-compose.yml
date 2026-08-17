@@ -1,6 +1,4 @@
-# docker-compose.yml для локальной разработки.
-# Запускает только PostgreSQL — Go и Node запускаются отдельно
-# чтобы сохранить hot reload.
+# docker-compose.yml для разворота на продакшене.
 #
 # Использование:
 #   docker-compose up -d        # запустить БД в фоне

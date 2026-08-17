@@ -71,7 +71,6 @@ func (s *ArticleService) Delete(ctx context.Context, slug string) error {
 }
 
 func (s *ArticleService) Publish(ctx context.Context, slug string) error {
-	// TODO: решить, нужно ли вообще возвращать статью при её публикации?
 	return s.repo.Publish(ctx, slug)
 }
 

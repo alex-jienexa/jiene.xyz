@@ -44,7 +44,6 @@ const Navbar: Component = () => {
       </nav>
 
       <nav aria-label="Кнопки терминала">
-        {/* BUG: Если не обернуть блоки в отдельный блок, то они сломают flex-структуру навигации. */}
           <button
             class={s.terminal}
             onClick={openTerminal}
