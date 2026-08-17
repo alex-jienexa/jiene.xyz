@@ -1,0 +1,21 @@
+/* ── Badge ──
+   Pill shape (--r-pill = 20px). No nested radius issues — badge is a leaf.
+── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 0.5px solid transparent;
+}
+
+.wip       { background: var(--status-wip-bg);  color: var(--status-wip-text);  border-color: var(--status-wip-border); }
+.idea      { background: var(--status-idea-bg); color: var(--status-idea-text); border-color: var(--status-idea-border); }
+.published { background: var(--lilac-50);       color: var(--purple-800);       border-color: var(--lilac-200); }
+.note      { background: var(--status-note-bg); color: var(--status-note-text); border-color: var(--status-note-border); }

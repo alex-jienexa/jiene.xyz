@@ -1,0 +1,72 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      # Данные сохраняются между перезапусками.
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  migrate:
+    image: migrate/migrate:v4.17.1
+    volumes:
+      - ./backend/migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}",
+        "up"
+      ]
+  
+  backend:
+    image: golang:1.26.4-alpine
+    working_dir: /app
+    init: true
+    volumes:
+      - ./backend:/app
+      - go_modules:/go/pkg/mod
+    env_file: "./.env"
+    environment:
+      ENV: "DEV"
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    # command: >
+    #   sh -c "go run ./cmd/createuser/ -username \"devuser\" -password \"admin_\" &&
+    #          go install github.com/air-verse/air@latest &&
+    #          air -c .air.toml"
+    command: >
+        sh -c "go run ./cmd/createuser/ -username \"devuser\" -password \"admin_\" &&
+               go build -tags dev -o ./tmp/server ./cmd/server/ &&
+               ./tmp/server"       
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  
+  frontend:
+    image: oven/bun:1.3.13-alpine
+    working_dir: /app
+    env_file: "./.env"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "${FRONTEND_DEV_PORT}:5173"
+    command: sh -c "bun ci && bun run dev -- --host 0.0.0.0"
+
+volumes:
+  postgres_data:
+  go_modules:

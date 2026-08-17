@@ -1,0 +1,115 @@
+/* ── Navbar ──
+   Backdrop-blur on scroll: interruptible CSS transition (animations.md).
+   Terminal button: min-height 40px hit area + scale(0.96) on press.
+   Logo: transition-property: color only — never transition: all.
+── */
+
+.nav {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 100;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--pad-desktop);
+  /* Interruptible state change — specific props (performance.md) */
+  transition-property: background-color, border-color, backdrop-filter;
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-out);
+}
+
+.scrolled {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 0.5px solid rgba(127, 119, 221, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .scrolled { background-color: rgba(20, 16, 31, 0.85); }
+}
+
+/* ── Brand / logo ── */
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--purple-400);
+  line-height: 1;
+  transition-property: color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.brand:hover .name { color: var(--purple-600); }
+
+.rune {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--lilac-200);
+  letter-spacing: 0.15em;
+  line-height: 1;
+}
+
+/* ── Nav links ── */
+.links { display: flex; gap: 20px; list-style: none; }
+
+.link {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition-property: color;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.link:hover   { color: var(--purple-800); }
+.linkActive   { color: var(--purple-400) !important; }
+
+/* ── Terminal hint ──
+   Shadow ring instead of border — adapts to any background (surfaces.md).
+   Optical padding: icon side -2px (surfaces.md optical alignment).
+   Min-height 40px — minimum hit area (surfaces.md).
+── */
+.terminal {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--text-secondary);
+  background: var(--status-note-bg);
+  box-shadow: 0 0 0 0.5px rgba(127, 119, 221, 0.2);
+  border-radius: var(--r-sm);
+  /* Optical: left 10px, right 8px (icon side) */
+  padding: 6px 8px 6px 10px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition-property: background-color, box-shadow, color, scale;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.terminal:hover {
+  background-color: var(--lilac-50);
+  box-shadow: 0 0 0 0.5px var(--lilac-200);
+  color: var(--purple-600);
+}
+
+/* Scale on press: exactly 0.96 — never below 0.95 (animations.md) */
+.terminal:active { scale: 0.96; }
+
+@media (max-width: 640px) {
+  .nav   { padding: 0 var(--pad-mobile); }
+  .links { display: none; }
+  .rune  { display: none; }
+}

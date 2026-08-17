@@ -1,0 +1,26 @@
+/* ── Tag / Sigil ──
+   Shadow ring instead of border — adapts to background (surfaces.md).
+── */
+
+.sigil {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.purple {
+  background: var(--lilac-50);
+  color: var(--purple-800);
+  box-shadow: 0 0 0 0.5px var(--lilac-200);
+}
+
+.gray {
+  background: var(--status-note-bg);
+  color: var(--text-secondary);
+}

@@ -1,0 +1,19 @@
+# Файлы модулей для фронтенда
+frontend/node_modules/
+frontend/dist/
+
+# Go-кэш и бинарники
+backend/tmp/
+backend/*.exe
+
+# Git и IDE
+.git/
+.gitignore
+.vscode/
+*.md
+
+# Локальные конфиги
+*.env
+.env.*
+docker-compose.dev.yml
+Dockerfile.dev
