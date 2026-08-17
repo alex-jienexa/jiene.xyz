@@ -9,7 +9,7 @@ import {
 } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { terminalOpen, closeTerminal, profile } from "../../store";
-import { executeCommand, type TermLine } from "./commands";
+import { executeCommand, type TermLine, type AwaitInput } from "./index";
 import s from "./Terminal.module.css";
 
 interface HistoryEntry {
@@ -28,6 +28,12 @@ const Terminal: Component = () => {
   const [history,    setHistory]    = createSignal<HistoryEntry[]>([]);
   const [cmdHistory, setCmdHistory] = createSignal<string[]>([]);
   const [histIdx,    setHistIdx]    = createSignal(-1);
+  // pending хранит продолжение многошаговой команды (сейчас — только
+  // login: username -> password). Пока pending не null, следующий Enter
+  // вызывает pending().resume(...) вместо executeCommand — это и есть
+  // весь механизм "диалога" в терминале, без отдельного стейт-машины
+  // на уровне компонента.
+  const [pending,    setPending]    = createSignal<AwaitInput | null>(null);
 
   let inputRef!: HTMLInputElement;
   let scrollRef!: HTMLDivElement;
@@ -49,19 +55,34 @@ const Terminal: Component = () => {
     onCleanup(() => window.removeEventListener("keydown", handler));
   });
 
-  function handleSubmit() {
-    const cmd = input().trim();
-    if (!cmd) return;
+  async function handleSubmit() {
+    const raw = input();
+    const step = pending();
 
-    const result = executeCommand(cmd, profile(), navigate);
+    // Пустой ввод допустим только как продолжение диалога (например,
+    // пустой username), но не как самостоятельная команда — иначе Enter
+    // на пустом поле бы каждый раз печатал "команда не найдена".
+    if (!raw.trim() && !step) return;
+
+    // Во время ввода пароля в историю не должен попасть сам пароль —
+    // показываем маску той же длины, что и настоящий ввод.
+    const displayInput = step?.mask ? "•".repeat(raw.length) : raw;
+
+    const result = step
+      ? await step.resume(raw, { profile: profile(), navigate })
+      : await executeCommand(raw.trim(), profile(), navigate);
 
     if (result.clear) {
       setHistory([]);
     } else {
-      setHistory((h) => [...h, { input: cmd, lines: result.lines }]);
+      setHistory((h) => [...h, { input: displayInput, lines: result.lines }]);
     }
 
-    setCmdHistory((h) => [cmd, ...h].slice(0, 50));
+    // История стрелок-вверх не должна запоминать пароли и промежуточные
+    // шаги диалога — только команды, введённые "с чистого листа".
+    if (!step) setCmdHistory((h) => [raw, ...h].slice(0, 50));
+
+    setPending(result.awaitInput ?? null);
     setHistIdx(-1);
     setInput("");
 
@@ -70,7 +91,11 @@ const Terminal: Component = () => {
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === "Enter") { handleSubmit(); return; }
+    if (e.key === "Enter") { void handleSubmit(); return; }
+    // Листать историю команд посреди диалога (username/password) не нужно —
+    // это и странно с точки зрения UX, и не пригодится, так как pending
+    // не связан с cmdHistory.
+    if (pending()) return;
     if (e.key === "ArrowUp") {
       e.preventDefault();
       const next = Math.min(histIdx() + 1, cmdHistory().length - 1);
@@ -138,7 +163,7 @@ const Terminal: Component = () => {
             <span class={s.prompt}>~</span>
             <input
               ref={inputRef}
-              type="text"
+              type={pending()?.mask ? "password" : "text"}
               class={s.input}
               value={input()}
               onInput={(e) => setInput(e.currentTarget.value)}
@@ -147,7 +172,7 @@ const Terminal: Component = () => {
               autocorrect="off"
               autocapitalize="off"
               spellcheck={false}
-              aria-label="Ввод команды"
+              aria-label={pending()?.mask ? "Ввод пароля" : "Ввод команды"}
             />
           </div>
         </div>

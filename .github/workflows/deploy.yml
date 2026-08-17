@@ -37,7 +37,7 @@ jobs:
 
             sleep 15
 
-            if curl --fail http://localhost:9090/api/whoami; then
+            if curl --fail http://localhost:9090/api/whoami && curl -f http://localhost:9090/; then
               echo "Тест пройден"
               STATUS=0
             else
@@ -52,7 +52,7 @@ jobs:
 
   deploy:
     needs: test-deploy
-    if: github.ref == 'tefs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
@@ -68,7 +68,7 @@ jobs:
             git pull origin main
 
             cat << 'EOF' > .env
-            $ {{ secrets.ENV_FILE }}
+            ${{ secrets.ENV_FILE }}
             EOF
             
             chmod +x create_caddyfile.sh

@@ -1,7 +1,8 @@
-import { type Component, createSignal, onMount, onCleanup } from "solid-js";
+import { type Component, createSignal, onMount, onCleanup, Show } from "solid-js";
 import { A, useLocation } from "@solidjs/router";
 import { openTerminal } from "../../store";
 import s from "./Navbar.module.css";
+import { isAdmin } from "../../auth/auth.store";
 
 const NAV_LINKS = [
   { href: "/chronicle",  label: "chronicle"  },
@@ -42,14 +43,25 @@ const Navbar: Component = () => {
         </ul>
       </nav>
 
-      <button
-        class={s.terminal}
-        onClick={openTerminal}
-        aria-label="Открыть терминал (⌘K)"
-        title="⌘K"
-      >
-        ~ terminal
-      </button>
+      <nav aria-label="Кнопки терминала">
+          <button
+            class={s.terminal}
+            onClick={openTerminal}
+            aria-label="Открыть терминал (⌘K)"
+            title="⌘K"
+            style={{
+              "margin-right": "1rem"
+            }}
+          >
+            ~ terminal
+          </button>
+
+          <Show when={isAdmin()}>
+            <A href="/admin" class={s.terminal} aria-label="Открыть админку">
+              ~ admin
+            </A>
+          </Show>
+      </nav>
     </header>
   );
 };

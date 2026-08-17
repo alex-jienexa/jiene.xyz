@@ -3,12 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
-	"unicode"
 
 	"alex-jienexa/jiene.xyz/backend/internal/entity"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
+	"alex-jienexa/jiene.xyz/backend/pkg/slug"
 )
 
 // ArticleService содержит бизнес-логику работы со статьями.
@@ -40,6 +39,10 @@ func (s *ArticleService) GetBySlug(ctx context.Context, slug string) (*entity.Ar
 	return s.repo.GetBySlug(ctx, slug)
 }
 
+func (s *ArticleService) GetBySlugAdmin(ctx context.Context, slug string) (*entity.Article, error) {
+	return s.repo.GetBySlugAdmin(ctx, slug)
+}
+
 func (s *ArticleService) Create(ctx context.Context, input entity.ArticleCreateInput) (*entity.Article, error) {
 	if err := s.validateCreateInput(input); err != nil {
 		return nil, err
@@ -48,9 +51,9 @@ func (s *ArticleService) Create(ctx context.Context, input entity.ArticleCreateI
 	// Бизнес-правило: если автор не указал slug — генерируем
 	// его из заголовка автоматически.
 	if input.Slug == "" {
-		input.Slug = slugify(input.Title)
+		input.Slug = slug.Generate(input.Title)
 	} else {
-		input.Slug = slugify(input.Slug)
+		input.Slug = slug.Generate(input.Slug)
 	}
 
 	return s.repo.Create(ctx, input)
@@ -67,6 +70,10 @@ func (s *ArticleService) Delete(ctx context.Context, slug string) error {
 	return s.repo.Delete(ctx, slug)
 }
 
+func (s *ArticleService) Publish(ctx context.Context, slug string) error {
+	return s.repo.Publish(ctx, slug)
+}
+
 func (s *ArticleService) validateCreateInput(input entity.ArticleCreateInput) error {
 	if strings.TrimSpace(input.Title) == "" {
 		return fmt.Errorf("%w: title is required", entity.ErrInvalidInput)
@@ -78,26 +85,4 @@ func (s *ArticleService) validateCreateInput(input entity.ArticleCreateInput) er
 		return fmt.Errorf("%w: kind is required", entity.ErrInvalidInput)
 	}
 	return nil
-}
-
-var nonAlphanumeric = regexp.MustCompile(`[^a-z0-9]+`)
-
-// slugify превращает произвольный текст в URL-безопасную строку.
-// "Почему PF2e — идеальный полигон" → "pochemu-pf2e-idealnyy-poligon"
-//
-// Это простая реализация без транслитерации кириллицы для краткости —
-// в качестве упражнения предлагаю добавить транслитерацию самостоятельно
-// (см. секцию "что изучить" после кода).
-func slugify(s string) string {
-	s = strings.ToLower(s)
-	var b strings.Builder
-	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) {
-			b.WriteRune(r)
-		} else {
-			b.WriteRune(' ')
-		}
-	}
-	result := nonAlphanumeric.ReplaceAllString(b.String(), "-")
-	return strings.Trim(result, "-")
 }

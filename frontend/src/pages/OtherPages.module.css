@@ -45,6 +45,7 @@
   margin-bottom: 20px;
   text-wrap: pretty;
   font-style: normal;
+  font-style: italic;
 }
 
 .body {
@@ -193,4 +194,10 @@
   color: var(--text-tertiary);
   font-style: italic;
   text-wrap: pretty;
+}
+
+.empty {
+  padding: 48px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
 }

@@ -33,11 +33,16 @@ export const LaboratoryPage: Component = () => {
         }
       >
         {(res) => (
-          <div class={s.labGrid}>
-            <For each={res().data}>
-              {(article, i) => <ArticleCard article={article} animDelay={i() * 60} />}
-            </For>
-          </div>
+          <Show 
+            when={res().data.length > 0}
+            fallback={<p class={s.empty}>Идей пока нет - лаборатория ждёт своих первых набросков.</p>}
+          >
+            <div class={s.labGrid}>
+              <For each={res().data}>
+                {(article, i) => <ArticleCard article={article} animDelay={i() * 60} />}
+              </For>
+            </div>
+          </Show>
         )}
       </Show>
     </div>

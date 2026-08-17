@@ -1,27 +1,9 @@
 import { type Component, createResource, Show } from "solid-js";
 import { useParams, A } from "@solidjs/router";
 import { getArticle } from "../api";
+import { markdownToHtml } from "../lib/markdown";
 import Badge from "../components/ui/Badge";
 import s from "./ArticlePage.module.css";
-
-// Markdown → HTML — без внешних зависимостей.
-// Для production заменить на marked / remark.
-function markdownToHtml(md: string): string {
-  return md
-    .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
-      `<pre class="${s.body} data-lang="${lang}"><code>${escapeHtml(code.trim())}</code></pre>`
-    )
-    .replace(/`([^`]+)`/g, `<code>$1</code>`)
-    .replace(/^## (.+)$/gm, `<h2>$1</h2>`)
-    .replace(/^### (.+)$/gm, `<h3>$1</h3>`)
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/^(?!<h[23]|<pre|<ul|<ol|<li|<block)(.+)$/gm, "<p>$1</p>")
-    .replace(/<p><\/p>/g, "");
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 function formatDate(iso?: string): string {
   if (!iso) return "";

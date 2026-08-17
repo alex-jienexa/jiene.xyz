@@ -54,29 +54,28 @@ func main() {
 	}
 	tokenService := auth.NewTokenService(jwtSecret, 24*time.Hour)
 
-	adminPasswordHash := getEnv("ADMIN_PASSWORD_HASH", "")
-	if adminPasswordHash == "" {
-		log.Fatal("ADMIN_PASSWORD_HASH environment variable is required")
-	}
-
 	// --- Регистрация репозиториев ---
 	profileRepo := repository.NewProfileRepository(db)
 	articleRepo := repository.NewArticleRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	projectRepo := repository.NewProjectRepository(db)
 
 	// --- Регистрация сервисов ---
 	profileService := service.NewProfileService(profileRepo)
 	articleService := service.NewArticleService(articleRepo)
+	projectService := service.NewProjectService(projectRepo)
 
 	// --- Регистрация хендлеров ---
 	profileHandler := handler.NewProfileHandler(profileService)
-	authHandler := handler.NewAuthHandler(tokenService, jwtSecret)
+	authHandler := handler.NewAuthHandler(tokenService, userRepo)
 	articleHandler := handler.NewArticleHandler(articleService)
+	projectHandler := handler.NewProjectHandler(projectService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	apiRouter := buildRouter(profileHandler, authHandler, articleHandler, tokenService)
+	apiRouter := buildRouter(profileHandler, authHandler, articleHandler, projectHandler, tokenService)
 	r.Mount("/api/", apiRouter)
 
 	// --- Подключение документации ---
@@ -108,6 +107,7 @@ func main() {
 	// ISSUE: При разработке (ввиду прослойки в виде Air) сервер не
 	// будет выключаться через graceful shutdown. При прод-деплое,
 	// скорее всего, проблемы не будет.
+	// UPD 13.08: Не будет, это распространяется только для Air.
 
 	// Создать объект сервера
 	server := &http.Server{Addr: "0.0.0.0" + addr, Handler: r}
@@ -144,6 +144,7 @@ func buildRouter(
 	profileHandler *handler.ProfileHandler,
 	authHandler *handler.AuthHandler,
 	articleHandler *handler.ArticleHandler,
+	projectHandler *handler.ProjectHandler,
 	tokenService *auth.TokenService,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -166,15 +167,26 @@ func buildRouter(
 	r.Get("/whoami", profileHandler.Get)
 	r.Get("/articles", articleHandler.List)
 	r.Get("/articles/{slug}", articleHandler.GetBySlug)
+	r.Get("/projects", projectHandler.List)
+	r.Get("/projects/{slug}", projectHandler.GetBySlug)
 
 	r.Group(func(r chi.Router) {
 		// Для данной группы эндпоинтов нужна аутентификация
 		r.Use(custommiddleware.RequireAuth(tokenService))
 
 		r.Put("/whoami", profileHandler.Update)
+
+		r.Get("/admin/articles", articleHandler.ListAdmin)
+		r.Get("/admin/articles/{slug}", articleHandler.GetBySlugAdmin)
 		r.Post("/articles", articleHandler.Create)
 		r.Put("/articles/{slug}", articleHandler.Update)
 		r.Delete("/articles/{slug}", articleHandler.Delete)
+		r.Post("/articles/{slug}/publish", articleHandler.Publish)
+
+		r.Post("/projects", projectHandler.Create)
+		r.Put("/projects/{slug}", projectHandler.Update)
+		r.Delete("/projects/{slug}", projectHandler.Delete)
+
 	})
 
 	return r

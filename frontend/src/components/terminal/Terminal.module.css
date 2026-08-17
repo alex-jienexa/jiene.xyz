@@ -70,8 +70,6 @@
 
 button.dot {
   /* Extend hit area without affecting sibling layout */
-  margin: -15px;
-  padding: 15px;
   background-clip: content-box;
   cursor: pointer;
 }

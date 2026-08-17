@@ -9,6 +9,8 @@ import ArticlePage from './pages/ArticlePage';
 import CodexPage from './pages/CodexPage';
 import ProjectPage from './pages/ProjectPage';
 import { AboutPage, LaboratoryPage } from './pages/OtherPages';
+import AdminGuard from './components/AdminGuard';
+import AdminPage from './pages/AdminPage';
 
 const App: Component = () => {
     onMount(async () => {
@@ -32,6 +34,14 @@ const App: Component = () => {
       <Route path="/laboratory"    component={LaboratoryPage} />
       <Route path="/laboratory/:slug" component={ArticlePage} />
       <Route path="/about"         component={AboutPage} />
+      <Route
+        path="/admin"
+        component={() => (
+          <AdminGuard>
+            <AdminPage />
+          </AdminGuard>
+        )}
+      />
     </Router>
   );
 };

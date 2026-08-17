@@ -71,8 +71,55 @@ func (h *ArticleHandler) List(w http.ResponseWriter, r *http.Request) {
 		Kind:        entity.ArticleKind(q.Get("kind")),
 		Tag:         q.Get("tag"),
 		ProjectSlug: q.Get("project"),
+		IsPublished: parseBooleanOrNull("true"),
 		Page:        parseIntOrDefault(q.Get("page"), 1),
 		Limit:       parseIntOrDefault(q.Get("limit"), 10),
+	}
+
+	items, total, err := h.service.List(r.Context(), filter)
+	if err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	dto := articleListResponse{
+		Data: make([]articleListItemDTO, 0, len(items)),
+		Meta: paginationMeta{Page: filter.Page, Limit: filter.Limit, Total: total},
+	}
+
+	for _, item := range items {
+		dto.Data = append(dto.Data, toArticleListItemDTO(item))
+	}
+
+	respondJSON(w, http.StatusOK, dto)
+}
+
+// ListAdmin возвращает список статей с поддержкой фильтрации по параметрам.
+// Фильтры более расширенные - имеется поддержка фильтрации опубликованных статей.
+//
+// @Summary	Получить список статей (админский фильтр)
+// @Tags	articles
+// @Produce	json
+// @Param	section			query	string	false "Раздел сайта"			Enums(chronicle,codex,lab)
+// @Param	kind 			query 	string	false "Тип контента"			Enums(article,devlog,research,note,essay)
+// @Param	tag 			query 	string	false "Slug тега контента"		example(pf2e)
+// @Param	project 		query 	string	false "Slug проекта стати"		example(pf2e-ml-ai)
+// @Param	is_published	query	bool	false "Публикованные статьи?"	default(null)
+// @Param	page 			query 	int		false "Страница"				default(1)
+// @Param	limit 			query 	int		false "Статей на страницу"		default(10) maximum(50)
+// @Success	200		{object}		articleListResponse
+// @Router	/admin/articles [get]
+func (h *ArticleHandler) ListAdmin(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	filter := entity.ArticleFilter{
+		Section:     entity.ArticleSection(q.Get("section")),
+		Kind:        entity.ArticleKind(q.Get("kind")),
+		Tag:         q.Get("tag"),
+		ProjectSlug: q.Get("project"),
+		// IsPublished: parseBooleanOrNull("null"),
+		Page:  parseIntOrDefault(q.Get("page"), 1),
+		Limit: parseIntOrDefault(q.Get("limit"), 10),
 	}
 
 	items, total, err := h.service.List(r.Context(), filter)
@@ -104,6 +151,7 @@ func (h *ArticleHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Produce	json
 // @Param	slug 	path 	string	true	"URL-идентификатор"	example(why-pf2e-is-great-for-ai)
 // @Success	200 	{object}	articleDTO
+// @Failure 401		{object}	errorResponse	"Нет доступа к статье"
 // @Failure	404 	{object}	errorResponse	"Статья не найдена"
 // @Failure	500 	{object}	errorResponse	"Внутренняя ошибка сервера"
 // @Router	/articles/{slug}	[get]
@@ -111,6 +159,33 @@ func (h *ArticleHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 
 	article, err := h.service.GetBySlug(r.Context(), slug)
+	if err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, toArticleDTO(article))
+}
+
+// GetBySlugAdmin возвращает полный текст статьи.
+// Позволяет получать неопубликованные статьи.
+//
+// @Summary     Получить статью, в т.ч. неопубликованную.
+// @Description Возвращает полный Markdown-контент статьи по её slug.
+//
+//	Используется страницей статьи на фронтенде.
+//
+// @Tags		articles
+// @Produce	json
+// @Param	slug 	path 	string	true	"URL-идентификатор"	example(why-pf2e-is-great-for-ai)
+// @Success	200 	{object}	articleDTO
+// @Failure	404 	{object}	errorResponse	"Статья не найдена"
+// @Failure	500 	{object}	errorResponse	"Внутренняя ошибка сервера"
+// @Router	/admin/articles/{slug}	[get]
+func (h *ArticleHandler) GetBySlugAdmin(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	article, err := h.service.GetBySlugAdmin(r.Context(), slug)
 	if err != nil {
 		mapDomainError(w, err)
 		return
@@ -203,6 +278,20 @@ func (h *ArticleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusNoContent, nil)
 }
 
+// Publish публикует статью.
+//
+// Пока без Swagger-doc, напишу позднее, когда полностью проверится работа админ-панели.
+func (h *ArticleHandler) Publish(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	if err := h.service.Publish(r.Context(), slug); err != nil {
+		mapDomainError(w, err)
+		return
+	}
+
+	respondJSON(w, http.StatusNoContent, nil)
+}
+
 // --- DTO mapping helpers ---
 
 func toArticleListItemDTO(item entity.ArticleListItem) articleListItemDTO {
@@ -278,4 +367,18 @@ func parseIntOrDefault(s string, def int) int {
 		return def
 	}
 	return v
+}
+
+func parseBooleanOrNull(s string) *bool {
+	var ref bool
+	switch s {
+	case "true":
+		ref = true
+		return &ref
+	case "false":
+		ref = false
+		return &ref
+	default:
+		return nil
+	}
 }

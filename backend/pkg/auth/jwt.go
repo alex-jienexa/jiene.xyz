@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -10,8 +11,13 @@ import (
 // Claims — данные, зашитые внутрь JWT.
 // jwt.RegisteredClaims даёт стандартные поля (exp, iat) бесплатно —
 // не нужно реализовывать проверку срока жизни токена самостоятельно.
+// Subject (RegisteredClaims.Subject) хранит ID пользователя как строку.
+// Username продублирован в claims, чтобы фронтенду не нужно было
+// делать лишний запрос ради отображения "вошёл как ...".
+
 type Claims struct {
-	Role string `json:"role"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -27,13 +33,19 @@ func NewTokenService(secret string, ttl time.Duration) *TokenService {
 	return &TokenService{secret: []byte(secret), ttl: ttl}
 }
 
-// GenerateAdminToken создаёт токен с ролью "admin".
-func (s *TokenService) GenerateAdminToken() (string, time.Time, error) {
+// GenerateAdminToken создаёт токен для определённого пользователя `userID`.
+// Теперь требуется отдельной указание прав и имени пользователя,
+// чтобы собрать для него ключ.
+// Обратите внимание, что код не проверяет наличие пользователя в БД:
+// этим занимаются другие сервисы (в данном случае - `AuthHandler`).
+func (s *TokenService) GenerateAdminToken(userID int, username, role string) (string, time.Time, error) {
 	expiresAt := time.Now().Add(s.ttl)
 
 	claims := Claims{
-		Role: "admin",
+		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   strconv.Itoa(userID),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
@@ -53,7 +65,7 @@ func (s *TokenService) GenerateAdminToken() (string, time.Time, error) {
 func (s *TokenService) VerifyToken(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
 		// Защита от атаки "alg confusion": явно проверяем,
 		// что алгоритм подписи токена — именно тот, что мы ожидаем.
 		// Без этой проверки злоумышленник теоретически может
