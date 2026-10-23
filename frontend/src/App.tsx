@@ -12,6 +12,8 @@ import { AboutPage, LaboratoryPage } from './pages/OtherPages';
 import AdminGuard from './components/AdminGuard';
 import AdminPage from './pages/AdminPage';
 
+import { TekCore } from './modules/tekcore';
+
 const App: Component = () => {
     onMount(async () => {
     try {
@@ -24,24 +26,27 @@ const App: Component = () => {
   });
 
   return (
-    <Router root={RootLayout}>
-      <Route path="/"              component={HomePage} />
-      <Route path="/chronicle"     component={ChroniclesPage} />
-      <Route path="/chronicle/:slug" component={ArticlePage} />
-      <Route path="/codex"         component={CodexPage} />
-      <Route path="/codex/:slug"   component={ProjectPage} />
-      <Route path="/codex/:project/:slug" component={ArticlePage} />
-      <Route path="/laboratory"    component={LaboratoryPage} />
-      <Route path="/laboratory/:slug" component={ArticlePage} />
-      <Route path="/about"         component={AboutPage} />
-      <Route
-        path="/admin"
-        component={() => (
-          <AdminGuard>
-            <AdminPage />
-          </AdminGuard>
-        )}
-      />
+    <Router>
+      <Route path="/" component={RootLayout}>
+        <Route path="/"                 component={HomePage} />
+        <Route path="/chronicle"        component={ChroniclesPage} />
+        <Route path="/chronicle/:slug"  component={ArticlePage} />
+        <Route path="/codex"            component={CodexPage} />
+        <Route path="/codex/:slug"      component={ProjectPage} />
+        <Route path="/codex/:project/:slug" component={ArticlePage} />
+        <Route path="/laboratory"       component={LaboratoryPage} />
+        <Route path="/laboratory/:slug" component={ArticlePage} />
+        <Route path="/about"            component={AboutPage} />
+        <Route path="/admin"            component={() => ( <AdminGuard><AdminPage /></AdminGuard> )} />
+      </Route>
+
+      { /* Подключение страниц-модулей */}
+      
+      <Route path="/nanograd/tekcore" component={TekCore.Layout}>
+        <Route path="/" component={TekCore.Landing} />
+        <Route path="/docs/:slug" component={TekCore.Doc} />
+        <Route path="/secret" component={TekCore.Secret} />
+      </Route>
     </Router>
   );
 };
