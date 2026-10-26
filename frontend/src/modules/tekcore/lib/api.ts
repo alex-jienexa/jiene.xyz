@@ -14,12 +14,12 @@ async function getJSON<T>(url: string, ms = 2500): Promise<T> {
 
 // Бэкенд -> при любой ошибке предзаданный файл. Сайт живёт и без сервера.
 export async function loadContent(): Promise<Content> {
-  try { return await getJSON<Content>("/api/content"); }
+  try { return await getJSON<Content>("/api/nanograd/tekcore/content"); }
   catch { return await getJSON<Content>("/data/content.json"); }
 }
 
 export async function submitApplication(p: { name: string; district: string; reason: string; consent: boolean }) {
-  const r = await fetch("/api/applications", {
+  const r = await fetch("/api/nanograd/tekcore/applications", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p),
   });
   if (!r.ok) throw new Error(String(r.status));
