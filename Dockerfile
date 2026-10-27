@@ -35,6 +35,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-s -w" \
     -o jiene-server \
     ./cmd/server/
+# Перенесём скрипт создания пользователей туда же
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w" \
+    -o create-user \
+    ./cmd/createuser/
+
 
 # === STAGE 3: Запуск приложения ===
 
@@ -43,6 +49,7 @@ FROM scratch AS runtime
 WORKDIR /app
 
 COPY --from=backend-builder /app/backend/jiene-server .
+COPY --from=backend-builder /app/backend/create-user .
 
 EXPOSE $BACKEND_PORT
 

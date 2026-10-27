@@ -24,6 +24,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - web
 
   migrate:
     image: migrate/migrate:v4.17.1
@@ -38,6 +40,8 @@ services:
         "-database", "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}",
         "up"
       ]
+    networks:
+      - web
 
   app:
     build:
@@ -53,6 +57,29 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2.11.2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    networks:
+      - web
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
 volumes:
+  caddy_data:
+  caddy_config:
   postgres_data:
+
+networks:
+  web:
+    external: true
