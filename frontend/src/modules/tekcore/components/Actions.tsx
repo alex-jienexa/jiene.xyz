@@ -5,7 +5,7 @@ import type { Product } from "../lib/api";
 import { DOCS } from "../data/docs";
 import { tc } from "../paths";
 
-const rub = (n: number) => `${n.toLocaleString("ru-RU")} ₽`;
+const rub = (n: number) => `${n.toLocaleString("ru-RU")} cr`;
 
 // Заглушка-иллюстрация, пока в content.json у товара пустое поле image.
 function ProductArt(p: { i: number }) {

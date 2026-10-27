@@ -70,8 +70,8 @@ export default function Hero() {
       <h1 class="hero__title" ref={title} aria-label="TEK-CORE" />
       <div class="hero__skip" ref={skip}>Нажмите ещё раз, чтобы пропустить</div>
       <div class="hero__meta" ref={meta}>
-        <span>INFROCore представляет</span>
-        <span>Листайте вниз, чтобы узнать больше</span>
+        <span>Запантетованная технология INFROCore®</span>
+        <span>Узнайте больше</span>
         <i class="hero__line" />
       </div>
     </section>
