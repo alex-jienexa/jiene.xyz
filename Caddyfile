@@ -1,3 +1,5 @@
+# This is a template file
+# Please, create a normal version with `create_caddyfile.sh`
 jiene.462292.xyz {
-    reverse_proxy backend:{}
+    reverse_proxy app:{}
 }

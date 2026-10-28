@@ -25,6 +25,7 @@ import (
 
 	"alex-jienexa/jiene.xyz/backend/internal/handler"
 	custommiddleware "alex-jienexa/jiene.xyz/backend/internal/middleware"
+	"alex-jienexa/jiene.xyz/backend/internal/modules/tekcore"
 	"alex-jienexa/jiene.xyz/backend/internal/repository"
 	"alex-jienexa/jiene.xyz/backend/internal/service"
 	"alex-jienexa/jiene.xyz/backend/internal/static"
@@ -75,8 +76,46 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// Настройка CORS для взаимодействия между фронтендом и бекендом.
+	// В разработке используется cross-origin с 3000 портом - портом
+	// фронтенда, но когда идёт разворот на сервер и фронтенд
+	// собирается как файлы в директории `dist/`, то можно сузить
+	// список allowed origins до домена сайта.
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:" + getEnv("FRONTEND_PORT", "3000")},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
 	apiRouter := buildRouter(profileHandler, authHandler, articleHandler, projectHandler, tokenService)
 	r.Mount("/api/", apiRouter)
+
+	// --- Регистрация модуля TekCore ---
+	tekcoreHandler, err := tekcore.New(tekcore.Config{
+		// JSON с данными лендинга: районы, метрики, товары и т.д.
+		ContentPath: getEnv(
+			"TEKCORE_CONTENT_PATH",
+			"internal/modules/tekcore/content.json",
+		),
+
+		// Файловое хранилище заявок.
+		AppsPath: getEnv(
+			"TEKCORE_APPS_PATH",
+			"internal/modules/tekcore/applications.jsonl",
+		),
+
+		// Защита административного получения заявок.
+		AdminAuth: custommiddleware.RequireAuth(tokenService),
+	})
+
+	if err != nil {
+		log.Fatalf("failed to initialize tekcore module: %v", err)
+	}
+
+	// Подключаем модуль по общему URL-префиксу.
+	r.Mount("/api/nanograd/tekcore", tekcoreHandler)
 
 	// --- Подключение документации ---
 	// Документация собирается автоматически при запуске dev-сервера.
@@ -148,19 +187,6 @@ func buildRouter(
 	tokenService *auth.TokenService,
 ) http.Handler {
 	r := chi.NewRouter()
-
-	// Настройка CORS для взаимодействия между фронтендом и бекендом.
-	// В разработке используется cross-origin с 3000 портом - портом
-	// фронтенда, но когда идёт разворот на сервер и фронтенд
-	// собирается как файлы в директории `dist/`, то можно сузить
-	// список allowed origins до домена сайта.
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:" + getEnv("FRONTEND_PORT", "3000")},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
 
 	r.Post("/auth/login", authHandler.Login)
 
