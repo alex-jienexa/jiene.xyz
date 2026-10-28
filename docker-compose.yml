@@ -44,9 +44,7 @@ services:
       - web
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: jiene-app:latest # Соберите приложение и передадите его через docker save
     restart: unless-stopped
     env_file: "./.env"
     environment:

@@ -1,5 +1,6 @@
 # Sensitive data
 Caddyfile
+temp_*
 
 dist
 .wrangler
